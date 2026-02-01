@@ -1,4 +1,5 @@
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { Plus, Search, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 
 export function Sidebar() {
@@ -6,6 +7,13 @@ export function Sidebar() {
   const selectedNote = useNoteStore((state) => state.selectedNote);
   const createNote = useNoteStore((state) => state.createNote);
   const selectNote = useNoteStore((state) => state.selectNote);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredNotes = notes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <aside className="w-64 bg-white flex flex-col">
@@ -19,12 +27,42 @@ export function Sidebar() {
           <Plus size={20} />
         </button>
       </div>
+      <div className="px-4 pb-3">
+        <div className="relative">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-100 rounded-lg focus:outline-none"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
       <nav className="flex-1 overflow-y-auto">
-        {notes.length === 0 ? (
-          <p className="p-4 text-gray-500 text-sm">No notes yet</p>
+        {filteredNotes.length === 0 ? (
+          <p className="p-4 text-gray-500 text-sm">
+            {searchQuery ? "No matching notes" : "No notes yet"}
+          </p>
         ) : (
           <ul className="flex flex-col gap-1 p-2">
-            {notes.map((note) => (
+            {filteredNotes.map((note) => (
               <li key={note.id}>
                 <button
                   type="button"
