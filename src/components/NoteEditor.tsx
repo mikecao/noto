@@ -11,6 +11,7 @@ export function NoteEditor() {
   const deleteNote = useNoteStore((state) => state.deleteNote);
 
   const saveTimeoutRef = useRef<number | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     return () => {
@@ -19,6 +20,12 @@ export function NoteEditor() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (selectedNote && !selectedNote.title && !selectedNote.content) {
+      titleInputRef.current?.focus();
+    }
+  }, [selectedNote]);
 
   function handleTitleChange(newTitle: string) {
     setTitle(newTitle);
@@ -49,8 +56,9 @@ export function NoteEditor() {
 
   return (
     <>
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between">
         <input
+          ref={titleInputRef}
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
