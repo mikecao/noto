@@ -28,7 +28,7 @@ export function NotePreview({
         }`}
       >
         <p
-          className={`font-medium truncate ${note.title ? "text-gray-900" : "text-gray-400"}`}
+          className={`font-medium truncate leading-6 ${note.title ? "text-gray-900" : "text-gray-400"}`}
         >
           {note.title || "Untitled"}
         </p>
@@ -46,7 +46,7 @@ export function NotePreview({
               e.stopPropagation();
               onToggleStar();
             }}
-            className={`absolute right-9 top-3 p-1 rounded hover:bg-gray-200 ${
+            className={`absolute right-8 top-3 p-1 rounded hover:bg-gray-200 ${
               note.starred
                 ? "text-gray-600"
                 : "text-gray-400 opacity-0 group-hover:opacity-100"
