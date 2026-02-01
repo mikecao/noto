@@ -75,7 +75,7 @@ export function Sidebar() {
                   <p className="font-medium text-gray-900 truncate">
                     {note.title || "Untitled"}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className={`text-xs truncate ${note.content ? "text-gray-500" : "text-gray-400 italic"}`}>
                     {note.content || "No content"}
                   </p>
                 </button>
