@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { File, Pin, Plus, Search, Star, Trash, X } from "lucide-react";
+import { File, Plus, Search, Star, Trash, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
+import { NotePreview } from "./NotePreview";
 
 export function Sidebar() {
   const notes = useNoteStore((state) => state.notes);
@@ -125,50 +126,15 @@ export function Sidebar() {
         ) : (
           <ul className="flex flex-col gap-1 p-2">
             {filteredNotes.map((note) => (
-              <li key={note.id} className="group relative">
-                <button
-                  type="button"
-                  onClick={() => selectNote(note)}
-                  className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 ${
-                    selectedNote?.id === note.id ? "bg-gray-100" : ""
-                  }`}
-                >
-                  <p className={`font-medium truncate ${note.title ? "text-gray-900" : "text-gray-400"}`}>
-                    {note.title || "Untitled"}
-                  </p>
-                  <p className={`text-xs truncate ${note.content ? "text-gray-500" : "text-gray-400 italic"}`}>
-                    {note.content || "No content"}
-                  </p>
-                </button>
-                {view !== "trash" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleStar(note);
-                      }}
-                      className={`absolute right-9 top-3 p-1 rounded hover:bg-gray-200 ${
-                        note.starred ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
-                      }`}
-                    >
-                      <Star size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        togglePin(note);
-                      }}
-                      className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
-                        note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
-                      }`}
-                    >
-                      <Pin size={16} />
-                    </button>
-                  </>
-                )}
-              </li>
+              <NotePreview
+                key={note.id}
+                note={note}
+                isSelected={selectedNote?.id === note.id}
+                showActions={view !== "trash"}
+                onSelect={() => selectNote(note)}
+                onToggleStar={() => toggleStar(note)}
+                onTogglePin={() => togglePin(note)}
+              />
             ))}
           </ul>
         )}
