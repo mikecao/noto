@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type Note,
   getAllNotes,
@@ -11,12 +11,22 @@ function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const saveTimeoutRef = useRef<number | null>(null);
+  const pendingSaveRef = useRef<{ title: string; content: string } | null>(
+    null
+  );
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadNotes();
   }, []);
+
+  useEffect(() => {
+    if (editorRef.current && selectedNote) {
+      editorRef.current.innerText = selectedNote.content;
+    }
+  }, [selectedNote?.id]);
 
   async function loadNotes() {
     try {
@@ -29,47 +39,98 @@ function App() {
     }
   }
 
+  const saveNote = useCallback(
+    async (noteId: number, noteTitle: string, noteContent: string) => {
+      try {
+        const updated = await updateNote(noteId, {
+          title: noteTitle,
+          content: noteContent,
+        });
+        setNotes((prev) =>
+          prev.map((n) => (n.id === updated.id ? updated : n))
+        );
+        return updated;
+      } catch (err) {
+        console.error("Failed to save note:", err);
+        return null;
+      }
+    },
+    []
+  );
+
+  const debouncedSave = useCallback(
+    (noteId: number, noteTitle: string, noteContent: string) => {
+      pendingSaveRef.current = { title: noteTitle, content: noteContent };
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = window.setTimeout(() => {
+        saveNote(noteId, noteTitle, noteContent);
+        pendingSaveRef.current = null;
+      }, 500);
+    },
+    [saveNote]
+  );
+
   async function handleCreateNote() {
     try {
-      const note = await createNote({ title: "Untitled", content: "" });
-      setNotes([note, ...notes]);
+      const note = await createNote({ title: "", content: "" });
+      setNotes((prev) => [note, ...prev]);
       setSelectedNote(note);
-      setTitle(note.title);
-      setContent(note.content);
+      setTitle("");
+      if (editorRef.current) {
+        editorRef.current.innerText = "";
+      }
     } catch (err) {
       console.error("Failed to create note:", err);
-    }
-  }
-
-  async function handleSaveNote() {
-    if (!selectedNote) return;
-    try {
-      const updated = await updateNote(selectedNote.id, { title, content });
-      setNotes(notes.map((n) => (n.id === updated.id ? updated : n)));
-      setSelectedNote(updated);
-    } catch (err) {
-      console.error("Failed to save note:", err);
     }
   }
 
   async function handleDeleteNote(id: number) {
     try {
       await deleteNote(id);
-      setNotes(notes.filter((n) => n.id !== id));
+      setNotes((prev) => prev.filter((n) => n.id !== id));
       if (selectedNote?.id === id) {
         setSelectedNote(null);
         setTitle("");
-        setContent("");
+        if (editorRef.current) {
+          editorRef.current.innerText = "";
+        }
       }
     } catch (err) {
       console.error("Failed to delete note:", err);
     }
   }
 
-  function selectNote(note: Note) {
+  async function selectNote(note: Note) {
+    if (selectedNote && pendingSaveRef.current) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      await saveNote(
+        selectedNote.id,
+        pendingSaveRef.current.title,
+        pendingSaveRef.current.content
+      );
+      pendingSaveRef.current = null;
+    }
     setSelectedNote(note);
     setTitle(note.title);
-    setContent(note.content);
+  }
+
+  function handleTitleChange(newTitle: string) {
+    setTitle(newTitle);
+    if (selectedNote) {
+      const content = editorRef.current?.innerText || "";
+      debouncedSave(selectedNote.id, newTitle, content);
+    }
+  }
+
+  function handleContentChange() {
+    if (selectedNote && editorRef.current) {
+      const content = editorRef.current.innerText || "";
+      debouncedSave(selectedNote.id, title, content);
+    }
   }
 
   if (loading) {
@@ -121,44 +182,37 @@ function App() {
         </nav>
       </aside>
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col bg-white">
         {selectedNote ? (
           <>
-            <header className="p-4 border-b border-gray-200 flex items-center gap-2">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Note title"
-                className="flex-1 text-xl font-bold bg-transparent outline-none"
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="Untitled"
+                className="flex-1 text-2xl font-bold bg-transparent outline-none text-gray-900"
               />
               <button
                 type="button"
-                onClick={handleSaveNote}
-                className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
-              >
-                Save
-              </button>
-              <button
-                type="button"
                 onClick={() => handleDeleteNote(selectedNote.id)}
-                className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                className="px-3 py-1 text-gray-400 hover:text-red-500 text-sm"
               >
                 Delete
               </button>
-            </header>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Start writing..."
-              className="flex-1 p-4 resize-none outline-none bg-white"
+            </div>
+            <div
+              ref={editorRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleContentChange}
+              data-placeholder="Start writing..."
+              className="flex-1 p-4 outline-none text-gray-700 overflow-auto whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
             />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">
-              Select a note or create a new one
-            </p>
+            <p className="text-gray-400">Select a note or create a new one</p>
           </div>
         )}
       </main>
