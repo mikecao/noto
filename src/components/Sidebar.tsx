@@ -28,7 +28,7 @@ export function Sidebar() {
           <Plus size={20} />
         </button>
       </div>
-      <div className="px-4 pb-3">
+      <div className="px-2">
         <div className="relative">
           <Search
             size={16}
