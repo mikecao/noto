@@ -1,0 +1,40 @@
+{
+  "name": "noto",
+  "version": "1.0.0",
+  "description": "A simple notes app",
+  "homepage": "https://github.com/mikecao/noto#readme",
+  "bugs": {
+    "url": "https://github.com/mikecao/noto/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikecao/noto.git"
+  },
+  "license": "MIT",
+  "author": "mike@mikecao.com",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.13",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tauri-apps/cli": "^2.9.6",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.9.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}
