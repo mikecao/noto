@@ -14,7 +14,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={createNote}
-          className="p-1 text-gray-500 hover:text-gray-700"
+          className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
         >
           <Plus size={20} />
         </button>
