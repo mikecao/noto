@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { Pin, Plus, Search, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 
 export function Sidebar() {
@@ -7,6 +7,7 @@ export function Sidebar() {
   const selectedNote = useNoteStore((state) => state.selectedNote);
   const createNote = useNoteStore((state) => state.createNote);
   const selectNote = useNoteStore((state) => state.selectNote);
+  const togglePin = useNoteStore((state) => state.togglePin);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredNotes = notes.filter(
@@ -63,7 +64,7 @@ export function Sidebar() {
         ) : (
           <ul className="flex flex-col gap-1 p-2">
             {filteredNotes.map((note) => (
-              <li key={note.id}>
+              <li key={note.id} className="group relative">
                 <button
                   type="button"
                   onClick={() => selectNote(note)}
@@ -77,6 +78,18 @@ export function Sidebar() {
                   <p className="text-xs text-gray-500 truncate">
                     {note.content || "No content"}
                   </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePin(note);
+                  }}
+                  className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
+                    note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  <Pin size={14} />
                 </button>
               </li>
             ))}

@@ -4,12 +4,13 @@ export interface Note {
   id: number;
   title: string;
   content: string;
+  pinned: number;
   created_at: number;
   updated_at: number;
 }
 
 export type CreateNoteInput = Pick<Note, "title" | "content">;
-export type UpdateNoteInput = Partial<Pick<Note, "title" | "content">>;
+export type UpdateNoteInput = Partial<Pick<Note, "title" | "content" | "pinned">>;
 
 let db: Database | null = null;
 
@@ -23,7 +24,7 @@ async function getDb(): Promise<Database> {
 export async function getAllNotes(): Promise<Note[]> {
   const database = await getDb();
   return database.select<Note[]>(
-    "SELECT * FROM notes ORDER BY updated_at DESC"
+    "SELECT * FROM notes ORDER BY pinned DESC, updated_at DESC"
   );
 }
 
@@ -62,10 +63,11 @@ export async function updateNote(
 
   const title = input.title ?? existing.title;
   const content = input.content ?? existing.content;
+  const pinned = input.pinned ?? existing.pinned;
 
   await database.execute(
-    "UPDATE notes SET title = $1, content = $2, updated_at = $3 WHERE id = $4",
-    [title, content, now, id]
+    "UPDATE notes SET title = $1, content = $2, pinned = $3, updated_at = $4 WHERE id = $5",
+    [title, content, pinned, now, id]
   );
 
   const updated = await getNoteById(id);
