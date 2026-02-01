@@ -2,6 +2,14 @@
 
 A simple notes app built with Tauri, React, and TypeScript.
 
+## Features
+
+- Create, edit, and delete notes
+- Search notes by title or content
+- Pin notes to keep them at the top
+- Auto-save as you type
+- Local SQLite database storage
+
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite
@@ -40,6 +48,14 @@ pnpm tauri dev
 | `pnpm tauri build` | Build Tauri app for distribution |
 | `pnpm lint` | Run Biome linter |
 | `pnpm format` | Format code with Biome |
+
+## Data Storage
+
+Notes are stored in a local SQLite database at:
+
+- **macOS**: `~/Library/Application Support/com.mikecao.noto/noto.db`
+- **Windows**: `%APPDATA%\com.mikecao.noto\noto.db`
+- **Linux**: `~/.local/share/com.mikecao.noto/noto.db`
 
 ## License
 
