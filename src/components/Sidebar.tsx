@@ -1,32 +1,70 @@
 import { useState } from "react";
-import { Pin, Plus, Search, X } from "lucide-react";
+import { FileText, Pin, Plus, Search, Trash2, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 
 export function Sidebar() {
   const notes = useNoteStore((state) => state.notes);
+  const trash = useNoteStore((state) => state.trash);
+  const view = useNoteStore((state) => state.view);
   const selectedNote = useNoteStore((state) => state.selectedNote);
   const createNote = useNoteStore((state) => state.createNote);
   const selectNote = useNoteStore((state) => state.selectNote);
   const togglePin = useNoteStore((state) => state.togglePin);
+  const setView = useNoteStore((state) => state.setView);
+  const loadTrash = useNoteStore((state) => state.loadTrash);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredNotes = notes.filter(
+  const displayedNotes = view === "notes" ? notes : trash;
+  const filteredNotes = displayedNotes.filter(
     (note) =>
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  function handleViewChange(newView: "notes" | "trash") {
+    if (newView === "trash") {
+      loadTrash();
+    }
+    setView(newView);
+    setSearchQuery("");
+  }
+
   return (
     <aside className="w-64 bg-white flex flex-col">
       <div className="p-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Noto</h1>
-        <button
-          type="button"
-          onClick={createNote}
-          className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-        >
-          <Plus size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => handleViewChange("notes")}
+            className={`p-1.5 rounded ${
+              view === "notes"
+                ? "text-gray-900 bg-gray-100"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <FileText size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewChange("trash")}
+            className={`p-1.5 rounded ${
+              view === "trash"
+                ? "text-gray-900 bg-gray-100"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
+        {view === "notes" && (
+          <button
+            type="button"
+            onClick={createNote}
+            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+          >
+            <Plus size={20} />
+          </button>
+        )}
       </div>
       <div className="px-2">
         <div className="relative">
@@ -59,7 +97,11 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto">
         {filteredNotes.length === 0 ? (
           <p className="p-4 text-gray-500 text-sm">
-            {searchQuery ? "No matching notes" : "No notes yet"}
+            {searchQuery
+              ? "No matching notes"
+              : view === "notes"
+                ? "No notes yet"
+                : "Trash is empty"}
           </p>
         ) : (
           <ul className="flex flex-col gap-1 p-2">
@@ -79,18 +121,20 @@ export function Sidebar() {
                     {note.content || "No content"}
                   </p>
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePin(note);
-                  }}
-                  className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
-                    note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
-                  }`}
-                >
-                  <Pin size={14} />
-                </button>
+                {view === "notes" && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePin(note);
+                    }}
+                    className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
+                      note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    <Pin size={14} />
+                  </button>
+                )}
               </li>
             ))}
           </ul>

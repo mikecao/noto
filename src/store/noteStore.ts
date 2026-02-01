@@ -2,22 +2,33 @@ import { create } from "zustand";
 import {
   type Note,
   getAllNotes,
+  getDeletedNotes,
   createNote,
   updateNote,
   deleteNote,
+  restoreNote,
+  permanentlyDeleteNote,
 } from "../lib/database";
+
+type View = "notes" | "trash";
 
 interface NoteStore {
   notes: Note[];
+  trash: Note[];
+  view: View;
   selectedNote: Note | null;
   title: string;
   content: string;
   loading: boolean;
 
   loadNotes: () => Promise<void>;
+  loadTrash: () => Promise<void>;
+  setView: (view: View) => void;
   createNote: () => Promise<void>;
   selectNote: (note: Note) => void;
   deleteNote: (id: number) => Promise<void>;
+  restoreNote: (id: number) => Promise<void>;
+  permanentlyDeleteNote: (id: number) => Promise<void>;
   setTitle: (title: string) => void;
   setContent: (content: string) => void;
   saveNote: () => Promise<void>;
@@ -26,6 +37,8 @@ interface NoteStore {
 
 export const useNoteStore = create<NoteStore>((set, get) => ({
   notes: [],
+  trash: [],
+  view: "notes",
   selectedNote: null,
   title: "",
   content: "",
@@ -40,6 +53,19 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  loadTrash: async () => {
+    try {
+      const deletedNotes = await getDeletedNotes();
+      set({ trash: deletedNotes });
+    } catch (err) {
+      console.error("Failed to load trash:", err);
+    }
+  },
+
+  setView: (view: View) => {
+    set({ view, selectedNote: null, title: "", content: "" });
   },
 
   createNote: async () => {
@@ -71,14 +97,52 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   deleteNote: async (id: number) => {
     try {
       await deleteNote(id);
+      const { loadTrash } = get();
       set((state) => ({
         notes: state.notes.filter((n) => n.id !== id),
         selectedNote: state.selectedNote?.id === id ? null : state.selectedNote,
         title: state.selectedNote?.id === id ? "" : state.title,
         content: state.selectedNote?.id === id ? "" : state.content,
       }));
+      await loadTrash();
     } catch (err) {
       console.error("Failed to delete note:", err);
+    }
+  },
+
+  restoreNote: async (id: number) => {
+    try {
+      const restored = await restoreNote(id);
+      set((state) => {
+        const pinnedNotes = state.notes.filter((n) => n.pinned);
+        const unpinnedNotes = state.notes.filter((n) => !n.pinned);
+        const newNotes = restored.pinned
+          ? [restored, ...pinnedNotes, ...unpinnedNotes]
+          : [...pinnedNotes, restored, ...unpinnedNotes];
+        return {
+          notes: newNotes,
+          trash: state.trash.filter((n) => n.id !== id),
+          selectedNote: null,
+          title: "",
+          content: "",
+        };
+      });
+    } catch (err) {
+      console.error("Failed to restore note:", err);
+    }
+  },
+
+  permanentlyDeleteNote: async (id: number) => {
+    try {
+      await permanentlyDeleteNote(id);
+      set((state) => ({
+        trash: state.trash.filter((n) => n.id !== id),
+        selectedNote: state.selectedNote?.id === id ? null : state.selectedNote,
+        title: state.selectedNote?.id === id ? "" : state.title,
+        content: state.selectedNote?.id === id ? "" : state.content,
+      }));
+    } catch (err) {
+      console.error("Failed to permanently delete note:", err);
     }
   },
 

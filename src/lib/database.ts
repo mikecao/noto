@@ -7,6 +7,7 @@ export interface Note {
   pinned: number;
   created_at: number;
   updated_at: number;
+  deleted_at: number | null;
 }
 
 export type CreateNoteInput = Pick<Note, "title" | "content">;
@@ -24,7 +25,14 @@ async function getDb(): Promise<Database> {
 export async function getAllNotes(): Promise<Note[]> {
   const database = await getDb();
   return database.select<Note[]>(
-    "SELECT * FROM notes ORDER BY pinned DESC, updated_at DESC"
+    "SELECT * FROM notes WHERE deleted_at IS NULL ORDER BY pinned DESC, updated_at DESC"
+  );
+}
+
+export async function getDeletedNotes(): Promise<Note[]> {
+  const database = await getDb();
+  return database.select<Note[]>(
+    "SELECT * FROM notes WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
   );
 }
 
@@ -76,6 +84,25 @@ export async function updateNote(
 }
 
 export async function deleteNote(id: number): Promise<void> {
+  const database = await getDb();
+  const now = Math.floor(Date.now() / 1000);
+  await database.execute("UPDATE notes SET deleted_at = $1 WHERE id = $2", [
+    now,
+    id,
+  ]);
+}
+
+export async function restoreNote(id: number): Promise<Note> {
+  const database = await getDb();
+  await database.execute("UPDATE notes SET deleted_at = NULL WHERE id = $1", [
+    id,
+  ]);
+  const note = await getNoteById(id);
+  if (!note) throw new Error("Failed to restore note");
+  return note;
+}
+
+export async function permanentlyDeleteNote(id: number): Promise<void> {
   const database = await getDb();
   await database.execute("DELETE FROM notes WHERE id = $1", [id]);
 }

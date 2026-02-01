@@ -20,6 +20,12 @@ pub fn run() {
       description: "add pinned column",
       sql: "ALTER TABLE notes ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
       kind: MigrationKind::Up,
+    },
+    Migration {
+      version: 3,
+      description: "add deleted_at column",
+      sql: "ALTER TABLE notes ADD COLUMN deleted_at INTEGER DEFAULT NULL",
+      kind: MigrationKind::Up,
     }
   ];
 
