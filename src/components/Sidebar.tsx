@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 
 export function Sidebar() {
@@ -13,9 +14,9 @@ export function Sidebar() {
         <button
           type="button"
           onClick={createNote}
-          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+          className="p-1 text-gray-500 hover:text-gray-700"
         >
-          New
+          <Plus size={20} />
         </button>
       </div>
       <nav className="flex-1 overflow-y-auto">
