@@ -96,10 +96,18 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
     try {
       const updated = await updateNote(selectedNote.id, { title, content });
-      set((state) => ({
-        notes: [updated, ...state.notes.filter((n) => n.id !== updated.id)],
-        selectedNote: updated,
-      }));
+      set((state) => {
+        const otherNotes = state.notes.filter((n) => n.id !== updated.id);
+        const pinnedNotes = otherNotes.filter((n) => n.pinned);
+        const unpinnedNotes = otherNotes.filter((n) => !n.pinned);
+        const newNotes = updated.pinned
+          ? [updated, ...pinnedNotes, ...unpinnedNotes]
+          : [...pinnedNotes, updated, ...unpinnedNotes];
+        return {
+          notes: newNotes,
+          selectedNote: updated,
+        };
+      });
     } catch (err) {
       console.error("Failed to save note:", err);
     }
