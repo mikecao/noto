@@ -92,7 +92,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     try {
       const updated = await updateNote(selectedNote.id, { title, content });
       set((state) => ({
-        notes: state.notes.map((n) => (n.id === updated.id ? updated : n)),
+        notes: [updated, ...state.notes.filter((n) => n.id !== updated.id)],
         selectedNote: updated,
       }));
     } catch (err) {
