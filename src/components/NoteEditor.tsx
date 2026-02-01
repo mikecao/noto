@@ -55,6 +55,10 @@ export function NoteEditor() {
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           className="flex-1 text-2xl font-bold bg-transparent outline-none text-gray-900"
         />
         <button
