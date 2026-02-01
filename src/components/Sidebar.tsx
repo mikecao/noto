@@ -72,7 +72,7 @@ export function Sidebar() {
                     selectedNote?.id === note.id ? "bg-gray-100" : ""
                   }`}
                 >
-                  <p className="font-medium text-gray-900 truncate">
+                  <p className={`font-medium truncate ${note.title ? "text-gray-900" : "text-gray-400"}`}>
                     {note.title || "Untitled"}
                   </p>
                   <p className={`text-xs truncate ${note.content ? "text-gray-500" : "text-gray-400 italic"}`}>
