@@ -41,10 +41,10 @@ export function NoteMenu({
         onClick={() => setMenuOpen(!menuOpen)}
         className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
       >
-        <MoreHorizontal size={20} />
+        <MoreHorizontal size={16} />
       </button>
       {menuOpen && (
-        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[120px]">
+        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[150px]">
           {isTrash ? (
             <>
               <button
@@ -55,7 +55,7 @@ export function NoteMenu({
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
               >
-                <RotateCcw size={14} />
+                <RotateCcw size={16} className="shrink-0" />
                 Restore
               </button>
               <button
@@ -66,7 +66,7 @@ export function NoteMenu({
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 rounded flex items-center gap-2"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} className="shrink-0" />
                 Delete forever
               </button>
             </>
@@ -80,7 +80,7 @@ export function NoteMenu({
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
               >
-                <Pin size={14} />
+                <Pin size={16} className="shrink-0" />
                 {isPinned ? "Unpin" : "Pin"}
               </button>
               <button
@@ -91,8 +91,8 @@ export function NoteMenu({
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 rounded flex items-center gap-2"
               >
-                <Trash2 size={14} />
-                Delete
+                <Trash2 size={16} className="shrink-0" />
+                Move to trash
               </button>
             </>
           )}

@@ -42,7 +42,7 @@ export function Sidebar() {
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
             }`}
           >
-            <FileText size={20} />
+            <FileText size={16} />
           </button>
           <button
             type="button"
@@ -53,7 +53,7 @@ export function Sidebar() {
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
             }`}
           >
-            <Trash2 size={20} />
+            <Trash2 size={16} />
           </button>
         </div>
         {view === "notes" && (
@@ -62,7 +62,7 @@ export function Sidebar() {
             onClick={createNote}
             className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
           >
-            <Plus size={20} />
+            <Plus size={16} />
           </button>
         )}
       </div>
@@ -132,7 +132,7 @@ export function Sidebar() {
                       note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
                     }`}
                   >
-                    <Pin size={14} />
+                    <Pin size={16} />
                   </button>
                 )}
               </li>
