@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, Pin, RotateCcw, Trash, X } from "lucide-react";
+import { MoreHorizontal, Pin, RotateCcw, Star, Trash, X } from "lucide-react";
 
 interface NoteMenuProps {
   isTrash: boolean;
   isPinned: boolean;
+  isStarred: boolean;
   onTogglePin: () => void;
+  onToggleStar: () => void;
   onDelete: () => void;
   onRestore: () => void;
   onPermanentDelete: () => void;
@@ -13,7 +15,9 @@ interface NoteMenuProps {
 export function NoteMenu({
   isTrash,
   isPinned,
+  isStarred,
   onTogglePin,
+  onToggleStar,
   onDelete,
   onRestore,
   onPermanentDelete,
@@ -82,6 +86,17 @@ export function NoteMenu({
               >
                 <Pin size={16} className="shrink-0" />
                 {isPinned ? "Unpin" : "Pin"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onToggleStar();
+                  setMenuOpen(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
+              >
+                <Star size={16} className="shrink-0" />
+                {isStarred ? "Unstar" : "Star"}
               </button>
               <button
                 type="button"

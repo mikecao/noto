@@ -26,6 +26,12 @@ pub fn run() {
       description: "add deleted_at column",
       sql: "ALTER TABLE notes ADD COLUMN deleted_at INTEGER DEFAULT NULL",
       kind: MigrationKind::Up,
+    },
+    Migration {
+      version: 4,
+      description: "add starred column",
+      sql: "ALTER TABLE notes ADD COLUMN starred INTEGER NOT NULL DEFAULT 0",
+      kind: MigrationKind::Up,
     }
   ];
 

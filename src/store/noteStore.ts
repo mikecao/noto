@@ -3,6 +3,7 @@ import {
   type Note,
   getAllNotes,
   getDeletedNotes,
+  getStarredNotes,
   createNote,
   updateNote,
   deleteNote,
@@ -10,10 +11,11 @@ import {
   permanentlyDeleteNote,
 } from "../lib/database";
 
-type View = "notes" | "trash";
+type View = "notes" | "starred" | "trash";
 
 interface NoteStore {
   notes: Note[];
+  starred: Note[];
   trash: Note[];
   view: View;
   selectedNote: Note | null;
@@ -22,6 +24,7 @@ interface NoteStore {
   loading: boolean;
 
   loadNotes: () => Promise<void>;
+  loadStarred: () => Promise<void>;
   loadTrash: () => Promise<void>;
   setView: (view: View) => void;
   createNote: () => Promise<void>;
@@ -33,10 +36,12 @@ interface NoteStore {
   setContent: (content: string) => void;
   saveNote: () => Promise<void>;
   togglePin: (note: Note) => Promise<void>;
+  toggleStar: (note: Note) => Promise<void>;
 }
 
 export const useNoteStore = create<NoteStore>((set, get) => ({
   notes: [],
+  starred: [],
   trash: [],
   view: "notes",
   selectedNote: null,
@@ -52,6 +57,15 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       console.error("Failed to load notes:", err);
     } finally {
       set({ loading: false });
+    }
+  },
+
+  loadStarred: async () => {
+    try {
+      const starredNotes = await getStarredNotes();
+      set({ starred: starredNotes });
+    } catch (err) {
+      console.error("Failed to load starred:", err);
     }
   },
 
@@ -194,6 +208,28 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       });
     } catch (err) {
       console.error("Failed to toggle pin:", err);
+    }
+  },
+
+  toggleStar: async (note: Note) => {
+    try {
+      const updated = await updateNote(note.id, { starred: note.starred ? 0 : 1 });
+      const { loadStarred } = get();
+      set((state) => {
+        const otherNotes = state.notes.filter((n) => n.id !== updated.id);
+        const pinnedNotes = otherNotes.filter((n) => n.pinned);
+        const unpinnedNotes = otherNotes.filter((n) => !n.pinned);
+        const newNotes = updated.pinned
+          ? [updated, ...pinnedNotes, ...unpinnedNotes]
+          : [...pinnedNotes, updated, ...unpinnedNotes];
+        return {
+          notes: newNotes,
+          selectedNote: state.selectedNote?.id === updated.id ? updated : state.selectedNote,
+        };
+      });
+      await loadStarred();
+    } catch (err) {
+      console.error("Failed to toggle star:", err);
     }
   },
 }));

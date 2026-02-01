@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { File, Pin, Plus, Search, Trash, X } from "lucide-react";
+import { File, Pin, Plus, Search, Star, Trash, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 
 export function Sidebar() {
   const notes = useNoteStore((state) => state.notes);
+  const starred = useNoteStore((state) => state.starred);
   const trash = useNoteStore((state) => state.trash);
   const view = useNoteStore((state) => state.view);
   const selectedNote = useNoteStore((state) => state.selectedNote);
@@ -11,18 +12,22 @@ export function Sidebar() {
   const selectNote = useNoteStore((state) => state.selectNote);
   const togglePin = useNoteStore((state) => state.togglePin);
   const setView = useNoteStore((state) => state.setView);
+  const loadStarred = useNoteStore((state) => state.loadStarred);
   const loadTrash = useNoteStore((state) => state.loadTrash);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const displayedNotes = view === "notes" ? notes : trash;
+  const displayedNotes =
+    view === "notes" ? notes : view === "starred" ? starred : trash;
   const filteredNotes = displayedNotes.filter(
     (note) =>
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  function handleViewChange(newView: "notes" | "trash") {
-    if (newView === "trash") {
+  function handleViewChange(newView: "notes" | "starred" | "trash") {
+    if (newView === "starred") {
+      loadStarred();
+    } else if (newView === "trash") {
       loadTrash();
     }
     setView(newView);
@@ -43,6 +48,17 @@ export function Sidebar() {
             }`}
           >
             <File size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewChange("starred")}
+            className={`p-1.5 rounded ${
+              view === "starred"
+                ? "text-gray-900 bg-gray-100"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Star size={16} />
           </button>
           <button
             type="button"
@@ -101,7 +117,9 @@ export function Sidebar() {
               ? "No matching notes"
               : view === "notes"
                 ? "No notes yet"
-                : "Trash is empty"}
+                : view === "starred"
+                  ? "No starred notes"
+                  : "Trash is empty"}
           </p>
         ) : (
           <ul className="flex flex-col gap-1 p-2">
@@ -121,7 +139,7 @@ export function Sidebar() {
                     {note.content || "No content"}
                   </p>
                 </button>
-                {view === "notes" && (
+                {view !== "trash" && (
                   <button
                     type="button"
                     onClick={(e) => {

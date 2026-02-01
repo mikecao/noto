@@ -12,6 +12,7 @@ export function NoteEditor() {
   const saveNote = useNoteStore((state) => state.saveNote);
   const deleteNote = useNoteStore((state) => state.deleteNote);
   const togglePin = useNoteStore((state) => state.togglePin);
+  const toggleStar = useNoteStore((state) => state.toggleStar);
   const restoreNote = useNoteStore((state) => state.restoreNote);
   const permanentlyDeleteNote = useNoteStore(
     (state) => state.permanentlyDeleteNote
@@ -84,7 +85,9 @@ export function NoteEditor() {
         <NoteMenu
           isTrash={isTrash}
           isPinned={!!selectedNote.pinned}
+          isStarred={!!selectedNote.starred}
           onTogglePin={() => togglePin(selectedNote)}
+          onToggleStar={() => toggleStar(selectedNote)}
           onDelete={() => deleteNote(selectedNote.id)}
           onRestore={() => restoreNote(selectedNote.id)}
           onPermanentDelete={() => permanentlyDeleteNote(selectedNote.id)}

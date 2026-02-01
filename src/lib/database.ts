@@ -5,13 +5,14 @@ export interface Note {
   title: string;
   content: string;
   pinned: number;
+  starred: number;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
 }
 
 export type CreateNoteInput = Pick<Note, "title" | "content">;
-export type UpdateNoteInput = Partial<Pick<Note, "title" | "content" | "pinned">>;
+export type UpdateNoteInput = Partial<Pick<Note, "title" | "content" | "pinned" | "starred">>;
 
 let db: Database | null = null;
 
@@ -33,6 +34,13 @@ export async function getDeletedNotes(): Promise<Note[]> {
   const database = await getDb();
   return database.select<Note[]>(
     "SELECT * FROM notes WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
+  );
+}
+
+export async function getStarredNotes(): Promise<Note[]> {
+  const database = await getDb();
+  return database.select<Note[]>(
+    "SELECT * FROM notes WHERE starred = 1 AND deleted_at IS NULL ORDER BY pinned DESC, updated_at DESC"
   );
 }
 
@@ -72,10 +80,11 @@ export async function updateNote(
   const title = input.title ?? existing.title;
   const content = input.content ?? existing.content;
   const pinned = input.pinned ?? existing.pinned;
+  const starred = input.starred ?? existing.starred;
 
   await database.execute(
-    "UPDATE notes SET title = $1, content = $2, pinned = $3, updated_at = $4 WHERE id = $5",
-    [title, content, pinned, now, id]
+    "UPDATE notes SET title = $1, content = $2, pinned = $3, starred = $4, updated_at = $5 WHERE id = $6",
+    [title, content, pinned, starred, now, id]
   );
 
   const updated = await getNoteById(id);
