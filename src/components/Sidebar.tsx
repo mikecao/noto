@@ -8,8 +8,8 @@ export function Sidebar() {
   const selectNote = useNoteStore((state) => state.selectNote);
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+    <aside className="w-64 bg-white flex flex-col">
+      <div className="p-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Noto</h1>
         <button
           type="button"
@@ -23,14 +23,14 @@ export function Sidebar() {
         {notes.length === 0 ? (
           <p className="p-4 text-gray-500 text-sm">No notes yet</p>
         ) : (
-          <ul>
+          <ul className="flex flex-col gap-1 p-2">
             {notes.map((note) => (
               <li key={note.id}>
                 <button
                   type="button"
                   onClick={() => selectNote(note)}
-                  className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 ${
-                    selectedNote?.id === note.id ? "bg-blue-50" : ""
+                  className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 ${
+                    selectedNote?.id === note.id ? "bg-gray-100" : ""
                   }`}
                 >
                   <p className="font-medium text-gray-900 truncate">
