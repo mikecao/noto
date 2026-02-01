@@ -10,6 +10,7 @@ export function NoteEditor() {
   const setContent = useNoteStore((state) => state.setContent);
   const saveNote = useNoteStore((state) => state.saveNote);
   const deleteNote = useNoteStore((state) => state.deleteNote);
+  const togglePin = useNoteStore((state) => state.togglePin);
 
   const saveTimeoutRef = useRef<number | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +71,11 @@ export function NoteEditor() {
           spellCheck={false}
           className="flex-1 text-2xl font-bold bg-transparent outline-none text-gray-900"
         />
-        <NoteMenu onDelete={() => deleteNote(selectedNote.id)} />
+        <NoteMenu
+          isPinned={!!selectedNote.pinned}
+          onTogglePin={() => togglePin(selectedNote)}
+          onDelete={() => deleteNote(selectedNote.id)}
+        />
       </div>
       <textarea
         value={content}

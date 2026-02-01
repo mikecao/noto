@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pin, Trash2 } from "lucide-react";
 
 interface NoteMenuProps {
+  isPinned: boolean;
+  onTogglePin: () => void;
   onDelete: () => void;
 }
 
-export function NoteMenu({ onDelete }: NoteMenuProps) {
+export function NoteMenu({ isPinned, onTogglePin, onDelete }: NoteMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +34,17 @@ export function NoteMenu({ onDelete }: NoteMenuProps) {
       </button>
       {menuOpen && (
         <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[120px]">
+          <button
+            type="button"
+            onClick={() => {
+              onTogglePin();
+              setMenuOpen(false);
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
+          >
+            <Pin size={14} />
+            {isPinned ? "Unpin" : "Pin"}
+          </button>
           <button
             type="button"
             onClick={() => {
