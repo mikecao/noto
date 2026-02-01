@@ -11,22 +11,16 @@ function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const saveTimeoutRef = useRef<number | null>(null);
   const pendingSaveRef = useRef<{ title: string; content: string } | null>(
     null
   );
-  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadNotes();
   }, []);
-
-  useEffect(() => {
-    if (editorRef.current && selectedNote) {
-      editorRef.current.innerText = selectedNote.content;
-    }
-  }, [selectedNote?.id]);
 
   async function loadNotes() {
     try {
@@ -78,9 +72,7 @@ function App() {
       setNotes((prev) => [note, ...prev]);
       setSelectedNote(note);
       setTitle("");
-      if (editorRef.current) {
-        editorRef.current.innerText = "";
-      }
+      setContent("");
     } catch (err) {
       console.error("Failed to create note:", err);
     }
@@ -93,9 +85,7 @@ function App() {
       if (selectedNote?.id === id) {
         setSelectedNote(null);
         setTitle("");
-        if (editorRef.current) {
-          editorRef.current.innerText = "";
-        }
+        setContent("");
       }
     } catch (err) {
       console.error("Failed to delete note:", err);
@@ -116,20 +106,20 @@ function App() {
     }
     setSelectedNote(note);
     setTitle(note.title);
+    setContent(note.content);
   }
 
   function handleTitleChange(newTitle: string) {
     setTitle(newTitle);
     if (selectedNote) {
-      const content = editorRef.current?.innerText || "";
       debouncedSave(selectedNote.id, newTitle, content);
     }
   }
 
-  function handleContentChange() {
-    if (selectedNote && editorRef.current) {
-      const content = editorRef.current.innerText || "";
-      debouncedSave(selectedNote.id, title, content);
+  function handleContentChange(newContent: string) {
+    setContent(newContent);
+    if (selectedNote) {
+      debouncedSave(selectedNote.id, title, newContent);
     }
   }
 
@@ -201,13 +191,11 @@ function App() {
                 Delete
               </button>
             </div>
-            <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleContentChange}
-              data-placeholder="Start writing..."
-              className="flex-1 p-4 outline-none text-gray-700 overflow-auto whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+            <textarea
+              value={content}
+              onChange={(e) => handleContentChange(e.target.value)}
+              placeholder="Start writing..."
+              className="flex-1 p-4 resize-none outline-none text-gray-700"
             />
           </>
         ) : (
