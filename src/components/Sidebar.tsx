@@ -11,6 +11,7 @@ export function Sidebar() {
   const createNote = useNoteStore((state) => state.createNote);
   const selectNote = useNoteStore((state) => state.selectNote);
   const togglePin = useNoteStore((state) => state.togglePin);
+  const toggleStar = useNoteStore((state) => state.toggleStar);
   const setView = useNoteStore((state) => state.setView);
   const loadStarred = useNoteStore((state) => state.loadStarred);
   const loadTrash = useNoteStore((state) => state.loadTrash);
@@ -140,18 +141,32 @@ export function Sidebar() {
                   </p>
                 </button>
                 {view !== "trash" && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      togglePin(note);
-                    }}
-                    className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
-                      note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
-                    }`}
-                  >
-                    <Pin size={16} />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleStar(note);
+                      }}
+                      className={`absolute right-9 top-3 p-1 rounded hover:bg-gray-200 ${
+                        note.starred ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
+                      <Star size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePin(note);
+                      }}
+                      className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
+                        note.pinned ? "text-gray-600" : "text-gray-400 opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
+                      <Pin size={16} />
+                    </button>
+                  </>
                 )}
               </li>
             ))}
