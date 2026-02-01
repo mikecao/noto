@@ -195,6 +195,10 @@ function App() {
               value={content}
               onChange={(e) => handleContentChange(e.target.value)}
               placeholder="Start writing..."
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               className="flex-1 p-4 resize-none outline-none text-gray-700"
             />
           </>
