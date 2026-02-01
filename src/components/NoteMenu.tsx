@@ -27,6 +27,7 @@ export function NoteMenu({ isPinned, onTogglePin, onDelete }: NoteMenuProps) {
     <div className="relative" ref={menuRef}>
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => setMenuOpen(!menuOpen)}
         className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
       >
