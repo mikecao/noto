@@ -20,7 +20,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       <Sidebar />
       <main className="flex-1 flex flex-col bg-white">
         <NoteEditor />
