@@ -1,6 +1,28 @@
+use tauri_plugin_sql::{Migration, MigrationKind};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  let migrations = vec![
+    Migration {
+      version: 1,
+      description: "create notes table",
+      sql: "CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL DEFAULT '',
+        content TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      )",
+      kind: MigrationKind::Up,
+    }
+  ];
+
   tauri::Builder::default()
+    .plugin(
+      tauri_plugin_sql::Builder::default()
+        .add_migrations("sqlite:noto.db", migrations)
+        .build(),
+    )
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
