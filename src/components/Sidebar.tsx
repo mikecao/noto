@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Pin, Plus, Search, Trash2, X } from "lucide-react";
+import { File, Pin, Plus, Search, Trash, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 
 export function Sidebar() {
@@ -42,7 +42,7 @@ export function Sidebar() {
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
             }`}
           >
-            <FileText size={16} />
+            <File size={16} />
           </button>
           <button
             type="button"
@@ -53,7 +53,7 @@ export function Sidebar() {
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
             }`}
           >
-            <Trash2 size={16} />
+            <Trash size={16} />
           </button>
         </div>
         {view === "notes" && (
