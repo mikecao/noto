@@ -151,12 +151,11 @@ export class D1Provider implements StorageProvider {
 
   async upsertNote(note: Note): Promise<Note> {
     await this.execute(
-      `INSERT INTO notes (id, title, content, pinned, starred, created_at, updated_at, deleted_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+      `INSERT INTO notes (id, title, content, starred, created_at, updated_at, deleted_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
        ON CONFLICT(id) DO UPDATE SET
          title = excluded.title,
          content = excluded.content,
-         pinned = excluded.pinned,
          starred = excluded.starred,
          updated_at = excluded.updated_at,
          deleted_at = excluded.deleted_at`,
@@ -164,7 +163,6 @@ export class D1Provider implements StorageProvider {
         note.id,
         note.title,
         note.content,
-        note.pinned,
         note.starred,
         note.created_at,
         note.updated_at,

@@ -32,6 +32,12 @@ pub fn run() {
       description: "add starred column",
       sql: "ALTER TABLE notes ADD COLUMN starred INTEGER NOT NULL DEFAULT 0",
       kind: MigrationKind::Up,
+    },
+    Migration {
+      version: 5,
+      description: "drop pinned column",
+      sql: "ALTER TABLE notes DROP COLUMN pinned",
+      kind: MigrationKind::Up,
     }
   ];
 

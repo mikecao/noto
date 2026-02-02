@@ -3,7 +3,6 @@ export interface Note {
   id: number;
   title: string;
   content: string;
-  pinned: number;
   starred: number;
   created_at: number;
   updated_at: number;
