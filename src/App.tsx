@@ -16,6 +16,16 @@ function App() {
     loadNotes();
   }, [loadNotes]);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && settingsOpen) {
+        setSettingsOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [settingsOpen, setSettingsOpen]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
