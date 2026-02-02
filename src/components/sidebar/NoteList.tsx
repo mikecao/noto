@@ -55,7 +55,7 @@ export function NoteList({ notes, searchQuery, sidebarRef }: NoteListProps) {
         : "Trash is empty";
 
   if (notes.length === 0) {
-    return <p className="p-4 text-gray-500 text-sm">{emptyMessage}</p>;
+    return <p className="p-4 text-gray-500 text-sm text-center">{emptyMessage}</p>;
   }
 
   return (
