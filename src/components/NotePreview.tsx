@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Star } from "lucide-react";
 import type { Note } from "../lib/database";
 import { NoteMenu } from "./NoteMenu";
 
@@ -35,14 +36,18 @@ export function NotePreview({
         }`}
       >
         <p
-          className={`font-medium truncate leading-6 ${note.title ? "text-gray-900" : "text-gray-400"}`}
+          className={`font-medium truncate leading-6 grid grid-cols-[16px_1fr] items-center gap-1 ${note.title ? "text-gray-900" : "text-gray-400"}`}
         >
-          {note.title || "Untitled"}
+          <span className="flex justify-center">
+            {note.starred ? <Star size={14} className="shrink-0" /> : null}
+          </span>
+          <span className="truncate">{note.title || "Untitled"}</span>
         </p>
         <p
-          className={`text-xs truncate ${note.content ? "text-gray-500" : "text-gray-400 italic"}`}
+          className={`text-xs truncate grid grid-cols-[16px_1fr] gap-1 ${note.content ? "text-gray-500" : "text-gray-400 italic"}`}
         >
-          {note.content || "No content"}
+          <span />
+          <span className="truncate">{note.content || "No content"}</span>
         </p>
       </button>
       <div
