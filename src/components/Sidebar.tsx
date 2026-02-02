@@ -119,8 +119,7 @@ export function Sidebar() {
             </button>
           )}
         </div>
-        <div className="flex gap-1">
-        <div className="relative flex-1">
+        <div className="relative">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -146,36 +145,35 @@ export function Sidebar() {
             </button>
           )}
         </div>
-        <div className="relative" ref={sortMenuRef}>
-          <button
-            type="button"
-            onClick={() => setSortMenuOpen(!sortMenuOpen)}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-          >
-            <ArrowDownUp size={16} />
-          </button>
-          {sortMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-28">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    setSortBy(option.value);
-                    setSortMenuOpen(false);
-                  }}
-                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 flex items-center justify-between"
-                >
-                  {option.label}
-                  {sortBy === option.value && <Check size={14} className="text-gray-600" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        </div>
-        <div className="text-xs text-gray-500">
-          {filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>{filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}</span>
+          <div className="relative" ref={sortMenuRef}>
+            <button
+              type="button"
+              onClick={() => setSortMenuOpen(!sortMenuOpen)}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            >
+              <ArrowDownUp size={16} />
+            </button>
+            {sortMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-28">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setSortBy(option.value);
+                      setSortMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 flex items-center justify-between"
+                  >
+                    {option.label}
+                    {sortBy === option.value && <Check size={14} className="text-gray-600" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <nav className="flex-1 overflow-y-auto">
           {filteredNotes.length === 0 ? (
