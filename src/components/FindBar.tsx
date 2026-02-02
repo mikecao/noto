@@ -43,26 +43,22 @@ export function FindBar({
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-gray-50">
+    <div className="flex items-center justify-end gap-2 px-4 py-2">
       <input
         ref={inputRef}
         type="text"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Find in note..."
+        placeholder="Find..."
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
-        className="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:border-gray-400"
+        className="w-40 px-3 py-1.5 text-sm bg-gray-100 rounded-lg outline-none"
       />
-      <span className="text-sm text-gray-500 min-w-[60px] text-center">
-        {searchTerm
-          ? totalMatches > 0
-            ? `${currentMatch} of ${totalMatches}`
-            : "No matches"
-          : ""}
+      <span className="text-sm text-gray-500 min-w-[80px]">
+        {totalMatches > 0 ? `${currentMatch} of ${totalMatches}` : "No results"}
       </span>
       <button
         type="button"
