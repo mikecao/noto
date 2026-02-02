@@ -24,6 +24,7 @@ export function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -66,6 +67,11 @@ export function Sidebar() {
       if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
       if (filteredNotes.length === 0) return;
 
+      // Only handle when focus is within the sidebar
+      if (!sidebarRef.current?.contains(document.activeElement)) {
+        return;
+      }
+
       e.preventDefault();
       const currentIndex = selectedNote
         ? filteredNotes.findIndex((n) => n.id === selectedNote.id)
@@ -96,7 +102,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white flex flex-col">
+    <aside ref={sidebarRef} className="w-64 bg-white flex flex-col">
       <div className="p-3 flex flex-col gap-3 max-h-screen">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
