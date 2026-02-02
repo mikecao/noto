@@ -35,7 +35,6 @@ interface NoteStore {
   setTitle: (title: string) => void;
   setContent: (content: string) => void;
   saveNote: () => Promise<void>;
-  togglePin: (note: Note) => Promise<void>;
   toggleStar: (note: Note) => Promise<void>;
 }
 
@@ -85,16 +84,12 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   createNote: async () => {
     try {
       const note = await createNote({ title: "", content: "" });
-      set((state) => {
-        const pinnedNotes = state.notes.filter((n) => n.pinned);
-        const unpinnedNotes = state.notes.filter((n) => !n.pinned);
-        return {
-          notes: [...pinnedNotes, note, ...unpinnedNotes],
-          selectedNote: note,
-          title: "",
-          content: "",
-        };
-      });
+      set((state) => ({
+        notes: [note, ...state.notes],
+        selectedNote: note,
+        title: "",
+        content: "",
+      }));
     } catch (err) {
       console.error("Failed to create note:", err);
     }
@@ -127,20 +122,13 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   restoreNote: async (id: number) => {
     try {
       const restored = await restoreNote(id);
-      set((state) => {
-        const pinnedNotes = state.notes.filter((n) => n.pinned);
-        const unpinnedNotes = state.notes.filter((n) => !n.pinned);
-        const newNotes = restored.pinned
-          ? [restored, ...pinnedNotes, ...unpinnedNotes]
-          : [...pinnedNotes, restored, ...unpinnedNotes];
-        return {
-          notes: newNotes,
-          trash: state.trash.filter((n) => n.id !== id),
-          selectedNote: null,
-          title: "",
-          content: "",
-        };
-      });
+      set((state) => ({
+        notes: [restored, ...state.notes],
+        trash: state.trash.filter((n) => n.id !== id),
+        selectedNote: null,
+        title: "",
+        content: "",
+      }));
     } catch (err) {
       console.error("Failed to restore note:", err);
     }
@@ -176,38 +164,13 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       const updated = await updateNote(selectedNote.id, { title, content });
       set((state) => {
         const otherNotes = state.notes.filter((n) => n.id !== updated.id);
-        const pinnedNotes = otherNotes.filter((n) => n.pinned);
-        const unpinnedNotes = otherNotes.filter((n) => !n.pinned);
-        const newNotes = updated.pinned
-          ? [updated, ...pinnedNotes, ...unpinnedNotes]
-          : [...pinnedNotes, updated, ...unpinnedNotes];
         return {
-          notes: newNotes,
+          notes: [updated, ...otherNotes],
           selectedNote: updated,
         };
       });
     } catch (err) {
       console.error("Failed to save note:", err);
-    }
-  },
-
-  togglePin: async (note: Note) => {
-    try {
-      const updated = await updateNote(note.id, { pinned: note.pinned ? 0 : 1 });
-      set((state) => {
-        const otherNotes = state.notes.filter((n) => n.id !== updated.id);
-        const pinnedNotes = otherNotes.filter((n) => n.pinned);
-        const unpinnedNotes = otherNotes.filter((n) => !n.pinned);
-        const newNotes = updated.pinned
-          ? [updated, ...pinnedNotes, ...unpinnedNotes]
-          : [...pinnedNotes, updated, ...unpinnedNotes];
-        return {
-          notes: newNotes,
-          selectedNote: state.selectedNote?.id === updated.id ? updated : state.selectedNote,
-        };
-      });
-    } catch (err) {
-      console.error("Failed to toggle pin:", err);
     }
   },
 
@@ -217,13 +180,8 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       const { loadStarred } = get();
       set((state) => {
         const otherNotes = state.notes.filter((n) => n.id !== updated.id);
-        const pinnedNotes = otherNotes.filter((n) => n.pinned);
-        const unpinnedNotes = otherNotes.filter((n) => !n.pinned);
-        const newNotes = updated.pinned
-          ? [updated, ...pinnedNotes, ...unpinnedNotes]
-          : [...pinnedNotes, updated, ...unpinnedNotes];
         return {
-          notes: newNotes,
+          notes: [updated, ...otherNotes],
           selectedNote: state.selectedNote?.id === updated.id ? updated : state.selectedNote,
         };
       });

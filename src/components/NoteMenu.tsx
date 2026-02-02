@@ -1,34 +1,37 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, Pin, RotateCcw, Star, Trash, X } from "lucide-react";
+import { MoreHorizontal, RotateCcw, Star, Trash, X } from "lucide-react";
 
 interface NoteMenuProps {
   isTrash: boolean;
-  isPinned: boolean;
   isStarred: boolean;
-  onTogglePin: () => void;
   onToggleStar: () => void;
   onDelete: () => void;
   onRestore: () => void;
   onPermanentDelete: () => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function NoteMenu({
   isTrash,
-  isPinned,
   isStarred,
-  onTogglePin,
   onToggleStar,
   onDelete,
   onRestore,
   onPermanentDelete,
+  onOpenChange,
 }: NoteMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  function updateMenuOpen(open: boolean) {
+    setMenuOpen(open);
+    onOpenChange?.(open);
+  }
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+        updateMenuOpen(false);
       }
     }
     if (menuOpen) {
@@ -42,20 +45,20 @@ export function NoteMenu({
       <button
         type="button"
         tabIndex={-1}
-        onClick={() => setMenuOpen(!menuOpen)}
+        onClick={() => updateMenuOpen(!menuOpen)}
         className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
       >
         <MoreHorizontal size={16} />
       </button>
       {menuOpen && (
-        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[150px]">
+        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 min-w-[150px] z-50">
           {isTrash ? (
             <>
               <button
                 type="button"
                 onClick={() => {
                   onRestore();
-                  setMenuOpen(false);
+                  updateMenuOpen(false);
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
               >
@@ -66,7 +69,7 @@ export function NoteMenu({
                 type="button"
                 onClick={() => {
                   onPermanentDelete();
-                  setMenuOpen(false);
+                  updateMenuOpen(false);
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 rounded flex items-center gap-2"
               >
@@ -79,19 +82,8 @@ export function NoteMenu({
               <button
                 type="button"
                 onClick={() => {
-                  onTogglePin();
-                  setMenuOpen(false);
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
-              >
-                <Pin size={16} className="shrink-0" />
-                {isPinned ? "Unpin" : "Pin"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   onToggleStar();
-                  setMenuOpen(false);
+                  updateMenuOpen(false);
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
               >
@@ -102,7 +94,7 @@ export function NoteMenu({
                 type="button"
                 onClick={() => {
                   onDelete();
-                  setMenuOpen(false);
+                  updateMenuOpen(false);
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 rounded flex items-center gap-2"
               >

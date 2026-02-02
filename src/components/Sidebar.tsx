@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { File, Plus, Search, Star, Trash, X } from "lucide-react";
+import { NotebookPen, Plus, Search, Star, Trash, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 import { NotePreview } from "./NotePreview";
 
@@ -11,8 +11,12 @@ export function Sidebar() {
   const selectedNote = useNoteStore((state) => state.selectedNote);
   const createNote = useNoteStore((state) => state.createNote);
   const selectNote = useNoteStore((state) => state.selectNote);
-  const togglePin = useNoteStore((state) => state.togglePin);
   const toggleStar = useNoteStore((state) => state.toggleStar);
+  const deleteNote = useNoteStore((state) => state.deleteNote);
+  const restoreNote = useNoteStore((state) => state.restoreNote);
+  const permanentlyDeleteNote = useNoteStore(
+    (state) => state.permanentlyDeleteNote
+  );
   const setView = useNoteStore((state) => state.setView);
   const loadStarred = useNoteStore((state) => state.loadStarred);
   const loadTrash = useNoteStore((state) => state.loadTrash);
@@ -49,7 +53,7 @@ export function Sidebar() {
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
             }`}
           >
-            <File size={16} />
+            <NotebookPen size={16} />
           </button>
           <button
             type="button"
@@ -130,10 +134,12 @@ export function Sidebar() {
                 key={note.id}
                 note={note}
                 isSelected={selectedNote?.id === note.id}
-                showActions={view !== "trash"}
+                isTrash={view === "trash"}
                 onSelect={() => selectNote(note)}
                 onToggleStar={() => toggleStar(note)}
-                onTogglePin={() => togglePin(note)}
+                onDelete={() => deleteNote(note.id)}
+                onRestore={() => restoreNote(note.id)}
+                onPermanentDelete={() => permanentlyDeleteNote(note.id)}
               />
             ))}
           </ul>

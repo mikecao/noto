@@ -1,29 +1,36 @@
-import { Pin, Star } from "lucide-react";
+import { useState } from "react";
 import type { Note } from "../lib/database";
+import { NoteMenu } from "./NoteMenu";
 
 interface NotePreviewProps {
   note: Note;
   isSelected: boolean;
-  showActions: boolean;
+  isTrash: boolean;
   onSelect: () => void;
   onToggleStar: () => void;
-  onTogglePin: () => void;
+  onDelete: () => void;
+  onRestore: () => void;
+  onPermanentDelete: () => void;
 }
 
 export function NotePreview({
   note,
   isSelected,
-  showActions,
+  isTrash,
   onSelect,
   onToggleStar,
-  onTogglePin,
+  onDelete,
+  onRestore,
+  onPermanentDelete,
 }: NotePreviewProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <li className="group relative">
       <button
         type="button"
         onClick={onSelect}
-        className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 ${
+        className={`w-full text-left p-3 pr-10 rounded-lg hover:bg-gray-100 ${
           isSelected ? "bg-gray-100" : ""
         }`}
       >
@@ -38,38 +45,21 @@ export function NotePreview({
           {note.content || "No content"}
         </p>
       </button>
-      {showActions && (
-        <>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleStar();
-            }}
-            className={`absolute right-8 top-3 p-1 rounded hover:bg-gray-200 ${
-              note.starred
-                ? "text-gray-600"
-                : "text-gray-400 opacity-0 group-hover:opacity-100"
-            }`}
-          >
-            <Star size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin();
-            }}
-            className={`absolute right-2 top-3 p-1 rounded hover:bg-gray-200 ${
-              note.pinned
-                ? "text-gray-600"
-                : "text-gray-400 opacity-0 group-hover:opacity-100"
-            }`}
-          >
-            <Pin size={16} />
-          </button>
-        </>
-      )}
+      <div
+        className={`absolute right-2 top-3 ${
+          menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        }`}
+      >
+        <NoteMenu
+          isTrash={isTrash}
+          isStarred={!!note.starred}
+          onToggleStar={onToggleStar}
+          onDelete={onDelete}
+          onRestore={onRestore}
+          onPermanentDelete={onPermanentDelete}
+          onOpenChange={setMenuOpen}
+        />
+      </div>
     </li>
   );
 }
