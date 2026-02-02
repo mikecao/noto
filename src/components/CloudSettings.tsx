@@ -60,15 +60,17 @@ export function CloudSettings() {
     getStorageCoordinator().resetD1();
   }
 
-  function handleToggleCloud(enabled: boolean) {
+  async function handleToggleCloud(enabled: boolean) {
     if (enabled && !d1Config) {
       // Don't enable without config
       return;
     }
     setCloudEnabled(enabled);
     if (enabled) {
-      // Sync from cloud when enabling
-      getStorageCoordinator().syncFromCloud();
+      const coordinator = getStorageCoordinator();
+      // Process any pending operations first, then sync from cloud
+      await coordinator.processQueue();
+      await coordinator.syncFromCloud();
     }
   }
 
@@ -170,9 +172,17 @@ export function CloudSettings() {
         </div>
 
         {cloudEnabled && queue.length > 0 && (
-          <p className="mt-2 text-xs text-gray-500">
-            {queue.length} pending operation{queue.length !== 1 && "s"} to sync
-          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <p className="text-xs text-gray-500">
+              {queue.length} pending operation{queue.length !== 1 && "s"} to sync
+            </p>
+            <button
+              onClick={() => getStorageCoordinator().processQueue()}
+              className="text-xs text-gray-600 hover:text-gray-900 underline"
+            >
+              Sync now
+            </button>
+          </div>
         )}
       </div>
     </div>
