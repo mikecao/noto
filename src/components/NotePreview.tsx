@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Star } from "lucide-react";
+import { RotateCcw, Star, Trash2 } from "lucide-react";
 import type { Note } from "../lib/database";
-import { NoteMenu } from "./NoteMenu";
 
 interface NotePreviewProps {
   note: Note;
@@ -10,8 +8,7 @@ interface NotePreviewProps {
   onSelect: () => void;
   onToggleStar: () => void;
   onDelete: () => void;
-  onRestore: () => void;
-  onPermanentDelete: () => void;
+  onRestore?: () => void;
 }
 
 export function NotePreview({
@@ -22,10 +19,7 @@ export function NotePreview({
   onToggleStar,
   onDelete,
   onRestore,
-  onPermanentDelete,
 }: NotePreviewProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <li className="group relative">
       <button
@@ -66,21 +60,29 @@ export function NotePreview({
           <span className="truncate">{note.content || "No content"}</span>
         </p>
       </button>
-      <div
-        className={`absolute right-2 top-3 ${
-          menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
-      >
-        <NoteMenu
-          isTrash={isTrash}
-          isStarred={!!note.starred}
-          onToggleStar={onToggleStar}
-          onDelete={onDelete}
-          onRestore={onRestore}
-          onPermanentDelete={onPermanentDelete}
-          onOpenChange={setMenuOpen}
-        />
-      </div>
+      {isTrash ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRestore?.();
+          }}
+          className="absolute right-2 top-3 p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"
+        >
+          <RotateCcw size={14} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="absolute right-2 top-3 p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </li>
   );
 }

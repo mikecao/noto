@@ -15,9 +15,6 @@ export function Sidebar() {
   const toggleStar = useNoteStore((state) => state.toggleStar);
   const deleteNote = useNoteStore((state) => state.deleteNote);
   const restoreNote = useNoteStore((state) => state.restoreNote);
-  const permanentlyDeleteNote = useNoteStore(
-    (state) => state.permanentlyDeleteNote
-  );
   const setView = useNoteStore((state) => state.setView);
   const loadStarred = useNoteStore((state) => state.loadStarred);
   const loadTrash = useNoteStore((state) => state.loadTrash);
@@ -202,7 +199,6 @@ export function Sidebar() {
                 onToggleStar={() => toggleStar(note)}
                 onDelete={() => deleteNote(note.id)}
                 onRestore={() => restoreNote(note.id)}
-                onPermanentDelete={() => permanentlyDeleteNote(note.id)}
               />
             ))}
           </ul>
