@@ -102,7 +102,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside ref={sidebarRef} className="w-64 bg-white flex flex-col">
+    <aside ref={sidebarRef} className="w-96 bg-white flex flex-col">
       <div className="p-3 flex flex-col gap-3 max-h-screen">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">

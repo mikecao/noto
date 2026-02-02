@@ -216,105 +216,60 @@ export class StorageCoordinator implements StorageProvider {
   }
 
   async createNote(input: CreateNoteInput): Promise<Note> {
-    const d1 = this.getD1();
-
-    if (d1 && isOnline()) {
-      try {
-        const note = await d1.createNote(input);
-        await this.sqlite.upsertNote(note);
-        return note;
-      } catch (error) {
-        console.error("D1 createNote failed, using local:", error);
-      }
-    }
-
-    // Offline or D1 failed: create locally and queue
+    // Local-first: write to SQLite immediately for responsive UI
     const note = await this.sqlite.createNote(input);
+
+    // Queue cloud sync (non-blocking)
     if (this.getD1()) {
       this.enqueue({ type: "create", noteId: note.id });
+      this.processQueue(); // Fire and forget
     }
     return note;
   }
 
   async updateNote(id: number, input: UpdateNoteInput): Promise<Note> {
-    const d1 = this.getD1();
-
-    if (d1 && isOnline()) {
-      try {
-        const note = await d1.updateNote(id, input);
-        await this.sqlite.upsertNote(note);
-        return note;
-      } catch (error) {
-        console.error("D1 updateNote failed, using local:", error);
-      }
-    }
-
-    // Offline or D1 failed: update locally and queue
+    // Local-first: write to SQLite immediately for responsive UI
     const note = await this.sqlite.updateNote(id, input);
+
+    // Queue cloud sync (non-blocking)
     if (this.getD1()) {
       this.enqueue({ type: "update", noteId: id, payload: input });
+      this.processQueue(); // Fire and forget
     }
     return note;
   }
 
   async deleteNote(id: number): Promise<void> {
-    const d1 = this.getD1();
-
-    if (d1 && isOnline()) {
-      try {
-        await d1.deleteNote(id);
-        await this.sqlite.deleteNote(id);
-        return;
-      } catch (error) {
-        console.error("D1 deleteNote failed, using local:", error);
-      }
-    }
-
-    // Offline or D1 failed: delete locally and queue
+    // Local-first: write to SQLite immediately for responsive UI
     await this.sqlite.deleteNote(id);
+
+    // Queue cloud sync (non-blocking)
     if (this.getD1()) {
       this.enqueue({ type: "delete", noteId: id });
+      this.processQueue(); // Fire and forget
     }
   }
 
   async restoreNote(id: number): Promise<Note> {
-    const d1 = this.getD1();
-
-    if (d1 && isOnline()) {
-      try {
-        const note = await d1.restoreNote(id);
-        await this.sqlite.upsertNote(note);
-        return note;
-      } catch (error) {
-        console.error("D1 restoreNote failed, using local:", error);
-      }
-    }
-
-    // Offline or D1 failed: restore locally and queue
+    // Local-first: write to SQLite immediately for responsive UI
     const note = await this.sqlite.restoreNote(id);
+
+    // Queue cloud sync (non-blocking)
     if (this.getD1()) {
       this.enqueue({ type: "restore", noteId: id });
+      this.processQueue(); // Fire and forget
     }
     return note;
   }
 
   async permanentlyDeleteNote(id: number): Promise<void> {
-    const d1 = this.getD1();
-
-    if (d1 && isOnline()) {
-      try {
-        await d1.permanentlyDeleteNote(id);
-        await this.sqlite.permanentlyDeleteNote(id);
-        return;
-      } catch (error) {
-        console.error("D1 permanentlyDeleteNote failed, using local:", error);
-      }
-    }
-
-    // Offline or D1 failed: delete locally and queue
+    // Local-first: write to SQLite immediately for responsive UI
     await this.sqlite.permanentlyDeleteNote(id);
+
+    // Queue cloud sync (non-blocking)
     if (this.getD1()) {
       this.enqueue({ type: "permanentDelete", noteId: id });
+      this.processQueue(); // Fire and forget
     }
   }
 
