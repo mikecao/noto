@@ -72,53 +72,54 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-white flex flex-col">
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => handleViewChange("notes")}
-            className={`p-1.5 rounded ${
-              view === "notes"
-                ? "text-gray-900 bg-gray-100"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <NotebookPen size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleViewChange("starred")}
-            className={`p-1.5 rounded ${
-              view === "starred"
-                ? "text-gray-900 bg-gray-100"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Star size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleViewChange("trash")}
-            className={`p-1.5 rounded ${
-              view === "trash"
-                ? "text-gray-900 bg-gray-100"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Trash size={16} />
-          </button>
+      <div className="p-3 flex flex-col gap-3 max-h-screen">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleViewChange("notes")}
+              className={`p-1.5 rounded ${
+                view === "notes"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <NotebookPen size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewChange("starred")}
+              className={`p-1.5 rounded ${
+                view === "starred"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <Star size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewChange("trash")}
+              className={`p-1.5 rounded ${
+                view === "trash"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <Trash size={16} />
+            </button>
+          </div>
+          {view === "notes" && (
+            <button
+              type="button"
+              onClick={createNote}
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+            >
+              <Plus size={16} />
+            </button>
+          )}
         </div>
-        {view === "notes" && (
-          <button
-            type="button"
-            onClick={createNote}
-            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-          >
-            <Plus size={16} />
-          </button>
-        )}
-      </div>
-      <div className="px-2 flex gap-1">
+        <div className="flex gap-1">
         <div className="relative flex-1">
           <Search
             size={16}
@@ -149,7 +150,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => setSortMenuOpen(!sortMenuOpen)}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
           >
             <ArrowDownUp size={16} />
           </button>
@@ -172,38 +173,39 @@ export function Sidebar() {
             </div>
           )}
         </div>
+        </div>
+        <div className="text-xs text-gray-500">
+          {filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}
+        </div>
+        <nav className="flex-1 overflow-y-auto">
+          {filteredNotes.length === 0 ? (
+            <p className="p-4 text-gray-500 text-sm">
+              {searchQuery
+                ? "No matching notes"
+                : view === "notes"
+                  ? "No notes yet"
+                  : view === "starred"
+                    ? "No starred notes"
+                    : "Trash is empty"}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {filteredNotes.map((note) => (
+                <NotePreview
+                  key={note.id}
+                  note={note}
+                  isSelected={selectedNote?.id === note.id}
+                  isTrash={view === "trash"}
+                  onSelect={() => selectNote(note)}
+                  onToggleStar={() => toggleStar(note)}
+                  onDelete={() => deleteNote(note.id)}
+                  onRestore={() => restoreNote(note.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </nav>
       </div>
-      <div className="px-4 pt-4 text-xs text-gray-500">
-        {filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}
-      </div>
-      <nav className="flex-1 overflow-y-auto">
-        {filteredNotes.length === 0 ? (
-          <p className="p-4 text-gray-500 text-sm">
-            {searchQuery
-              ? "No matching notes"
-              : view === "notes"
-                ? "No notes yet"
-                : view === "starred"
-                  ? "No starred notes"
-                  : "Trash is empty"}
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-1 p-2">
-            {filteredNotes.map((note) => (
-              <NotePreview
-                key={note.id}
-                note={note}
-                isSelected={selectedNote?.id === note.id}
-                isTrash={view === "trash"}
-                onSelect={() => selectNote(note)}
-                onToggleStar={() => toggleStar(note)}
-                onDelete={() => deleteNote(note.id)}
-                onRestore={() => restoreNote(note.id)}
-              />
-            ))}
-          </ul>
-        )}
-      </nav>
     </aside>
   );
 }

@@ -1,4 +1,4 @@
-import { RotateCcw, Star, Trash2 } from "lucide-react";
+import { RotateCcw, Star, Trash } from "lucide-react";
 import type { Note } from "../lib/database";
 
 interface NotePreviewProps {
@@ -80,7 +80,7 @@ export function NotePreview({
           }}
           className="absolute right-2 top-3 p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"
         >
-          <Trash2 size={14} />
+          <Trash size={14} />
         </button>
       )}
     </li>
