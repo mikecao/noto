@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowDownUp, Check, NotebookPen, Plus, Search, Star, Trash, X } from "lucide-react";
+import { ArrowDownUp, Check, NotebookPen, Plus, Search, Settings, Star, Trash, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
 import { useSettingsStore, type SortBy } from "../store/settingsStore";
 import { NotePreview } from "./NotePreview";
@@ -21,6 +21,8 @@ export function Sidebar() {
   const loadTrash = useNoteStore((state) => state.loadTrash);
   const sortBy = useSettingsStore((state) => state.sortBy);
   const setSortBy = useSettingsStore((state) => state.setSortBy);
+  const settingsOpen = useSettingsStore((state) => state.settingsOpen);
+  const setSettingsOpen = useSettingsStore((state) => state.setSettingsOpen);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -138,6 +140,18 @@ export function Sidebar() {
               }`}
             >
               <Trash size={16} />
+            </button>
+            <div className="w-px h-4 bg-gray-200 mx-1" />
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(!settingsOpen)}
+              className={`p-1.5 rounded ${
+                settingsOpen
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <Settings size={16} />
             </button>
           </div>
           {view === "notes" && (
