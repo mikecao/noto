@@ -3,6 +3,7 @@ import { ArrowDownUp, Check, NotebookPen, Plus, Search, Star, Trash, X } from "l
 import { useNoteStore } from "../store/noteStore";
 import { useSettingsStore, type SortBy } from "../store/settingsStore";
 import { NotePreview } from "./NotePreview";
+import { SyncStatus } from "./SyncStatus";
 
 export function Sidebar() {
   const notes = useNoteStore((state) => state.notes);
@@ -59,6 +60,30 @@ export function Sidebar() {
     { value: "created", label: "Created" },
     { value: "title", label: "Title" },
   ];
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      if (filteredNotes.length === 0) return;
+
+      e.preventDefault();
+      const currentIndex = selectedNote
+        ? filteredNotes.findIndex((n) => n.id === selectedNote.id)
+        : -1;
+
+      let nextIndex: number;
+      if (e.key === "ArrowDown") {
+        nextIndex = currentIndex < filteredNotes.length - 1 ? currentIndex + 1 : 0;
+      } else {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : filteredNotes.length - 1;
+      }
+
+      selectNote(filteredNotes[nextIndex]);
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [filteredNotes, selectedNote, selectNote]);
 
   function handleViewChange(newView: "notes" | "starred" | "trash") {
     if (newView === "starred") {
@@ -146,7 +171,10 @@ export function Sidebar() {
           )}
         </div>
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>{filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}</span>
+          <div className="flex items-center gap-2">
+            <span>{filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}</span>
+            <SyncStatus />
+          </div>
           <div className="relative" ref={sortMenuRef}>
             <button
               type="button"

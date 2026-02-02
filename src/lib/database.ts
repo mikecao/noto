@@ -1,116 +1,51 @@
-import Database from "@tauri-apps/plugin-sql";
+// Re-export types from storage
+export type {
+  Note,
+  CreateNoteInput,
+  UpdateNoteInput,
+} from "./storage/types";
 
-export interface Note {
-  id: number;
-  title: string;
-  content: string;
-  pinned: number;
-  starred: number;
-  created_at: number;
-  updated_at: number;
-  deleted_at: number | null;
-}
+// Re-export functions using SQLiteProvider for backward compatibility
+import { getSQLiteProvider } from "./storage/sqlite";
+import type { CreateNoteInput, UpdateNoteInput, Note } from "./storage/types";
 
-export type CreateNoteInput = Pick<Note, "title" | "content">;
-export type UpdateNoteInput = Partial<Pick<Note, "title" | "content" | "starred">>;
-
-let db: Database | null = null;
-
-async function getDb(): Promise<Database> {
-  if (!db) {
-    db = await Database.load("sqlite:noto.db");
-  }
-  return db;
-}
+const provider = getSQLiteProvider();
 
 export async function getAllNotes(): Promise<Note[]> {
-  const database = await getDb();
-  return database.select<Note[]>(
-    "SELECT * FROM notes WHERE deleted_at IS NULL ORDER BY updated_at DESC"
-  );
+  return provider.getAllNotes();
 }
 
 export async function getDeletedNotes(): Promise<Note[]> {
-  const database = await getDb();
-  return database.select<Note[]>(
-    "SELECT * FROM notes WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
-  );
+  return provider.getDeletedNotes();
 }
 
 export async function getStarredNotes(): Promise<Note[]> {
-  const database = await getDb();
-  return database.select<Note[]>(
-    "SELECT * FROM notes WHERE starred = 1 AND deleted_at IS NULL ORDER BY updated_at DESC"
-  );
+  return provider.getStarredNotes();
 }
 
 export async function getNoteById(id: number): Promise<Note | null> {
-  const database = await getDb();
-  const results = await database.select<Note[]>(
-    "SELECT * FROM notes WHERE id = $1",
-    [id]
-  );
-  return results[0] ?? null;
+  return provider.getNoteById(id);
 }
 
 export async function createNote(input: CreateNoteInput): Promise<Note> {
-  const database = await getDb();
-  const now = Math.floor(Date.now() / 1000);
-  const result = await database.execute(
-    "INSERT INTO notes (title, content, created_at, updated_at) VALUES ($1, $2, $3, $4)",
-    [input.title, input.content, now, now]
-  );
-  if (result.lastInsertId === undefined) {
-    throw new Error("Failed to get insert ID");
-  }
-  const note = await getNoteById(result.lastInsertId);
-  if (!note) throw new Error("Failed to create note");
-  return note;
+  return provider.createNote(input);
 }
 
 export async function updateNote(
   id: number,
   input: UpdateNoteInput
 ): Promise<Note> {
-  const database = await getDb();
-  const now = Math.floor(Date.now() / 1000);
-  const existing = await getNoteById(id);
-  if (!existing) throw new Error("Note not found");
-
-  const title = input.title ?? existing.title;
-  const content = input.content ?? existing.content;
-  const starred = input.starred ?? existing.starred;
-
-  await database.execute(
-    "UPDATE notes SET title = $1, content = $2, starred = $3, updated_at = $4 WHERE id = $5",
-    [title, content, starred, now, id]
-  );
-
-  const updated = await getNoteById(id);
-  if (!updated) throw new Error("Failed to update note");
-  return updated;
+  return provider.updateNote(id, input);
 }
 
 export async function deleteNote(id: number): Promise<void> {
-  const database = await getDb();
-  const now = Math.floor(Date.now() / 1000);
-  await database.execute("UPDATE notes SET deleted_at = $1 WHERE id = $2", [
-    now,
-    id,
-  ]);
+  return provider.deleteNote(id);
 }
 
 export async function restoreNote(id: number): Promise<Note> {
-  const database = await getDb();
-  await database.execute("UPDATE notes SET deleted_at = NULL WHERE id = $1", [
-    id,
-  ]);
-  const note = await getNoteById(id);
-  if (!note) throw new Error("Failed to restore note");
-  return note;
+  return provider.restoreNote(id);
 }
 
 export async function permanentlyDeleteNote(id: number): Promise<void> {
-  const database = await getDb();
-  await database.execute("DELETE FROM notes WHERE id = $1", [id]);
+  return provider.permanentlyDeleteNote(id);
 }

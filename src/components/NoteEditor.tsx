@@ -161,7 +161,7 @@ export function NoteEditor() {
 
   return (
     <>
-      <div className="p-4 flex items-center justify-between">
+      <div className="p-3 flex items-center justify-between">
         <input
           ref={titleInputRef}
           type="text"
@@ -205,7 +205,7 @@ export function NoteEditor() {
         autoCapitalize="off"
         spellCheck={false}
         readOnly={isTrash}
-        className="flex-1 p-4 resize-none outline-none text-gray-700 overflow-y-auto"
+        className="flex-1 p-3 resize-none outline-none text-gray-700 overflow-y-auto"
       />
     </>
   );

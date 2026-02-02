@@ -25,7 +25,7 @@ export function NotePreview({
       <button
         type="button"
         onClick={onSelect}
-        className={`w-full text-left p-3 pr-10 rounded-lg hover:bg-gray-100 ${
+        className={`w-full text-left px-3 py-2 pr-10 rounded-lg hover:bg-gray-100 ${
           isSelected ? "bg-gray-100" : ""
         }`}
       >

@@ -9,6 +9,13 @@
     "core:default",
     "sql:default",
     "sql:allow-execute",
-    "sql:allow-select"
+    "sql:allow-select",
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://api.cloudflare.com/*" }
+      ]
+    }
   ]
 }

@@ -1,16 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {
-  type Note,
-  getAllNotes,
-  getDeletedNotes,
-  getStarredNotes,
-  createNote,
-  updateNote,
-  deleteNote,
-  restoreNote,
-  permanentlyDeleteNote,
-} from "../lib/database";
+import type { Note } from "../lib/storage/types";
+import { getStorageCoordinator } from "../lib/storage/coordinator";
 
 type View = "notes" | "starred" | "trash";
 
@@ -53,7 +44,8 @@ export const useNoteStore = create<NoteStore>()(
 
   loadNotes: async () => {
     try {
-      const allNotes = await getAllNotes();
+      const storage = getStorageCoordinator();
+      const allNotes = await storage.getAllNotes();
       set({ notes: allNotes });
     } catch (err) {
       console.error("Failed to load notes:", err);
@@ -64,7 +56,8 @@ export const useNoteStore = create<NoteStore>()(
 
   loadStarred: async () => {
     try {
-      const starredNotes = await getStarredNotes();
+      const storage = getStorageCoordinator();
+      const starredNotes = await storage.getStarredNotes();
       set({ starred: starredNotes });
     } catch (err) {
       console.error("Failed to load starred:", err);
@@ -73,7 +66,8 @@ export const useNoteStore = create<NoteStore>()(
 
   loadTrash: async () => {
     try {
-      const deletedNotes = await getDeletedNotes();
+      const storage = getStorageCoordinator();
+      const deletedNotes = await storage.getDeletedNotes();
       set({ trash: deletedNotes });
     } catch (err) {
       console.error("Failed to load trash:", err);
@@ -86,7 +80,8 @@ export const useNoteStore = create<NoteStore>()(
 
   createNote: async () => {
     try {
-      const note = await createNote({ title: "", content: "" });
+      const storage = getStorageCoordinator();
+      const note = await storage.createNote({ title: "", content: "" });
       set((state) => ({
         notes: [note, ...state.notes],
         selectedNote: note,
@@ -108,7 +103,8 @@ export const useNoteStore = create<NoteStore>()(
 
   deleteNote: async (id: number) => {
     try {
-      await deleteNote(id);
+      const storage = getStorageCoordinator();
+      await storage.deleteNote(id);
       const { loadTrash } = get();
       set((state) => ({
         notes: state.notes.filter((n) => n.id !== id),
@@ -124,7 +120,8 @@ export const useNoteStore = create<NoteStore>()(
 
   restoreNote: async (id: number) => {
     try {
-      const restored = await restoreNote(id);
+      const storage = getStorageCoordinator();
+      const restored = await storage.restoreNote(id);
       set((state) => ({
         notes: [restored, ...state.notes],
         trash: state.trash.filter((n) => n.id !== id),
@@ -139,7 +136,8 @@ export const useNoteStore = create<NoteStore>()(
 
   permanentlyDeleteNote: async (id: number) => {
     try {
-      await permanentlyDeleteNote(id);
+      const storage = getStorageCoordinator();
+      await storage.permanentlyDeleteNote(id);
       set((state) => ({
         trash: state.trash.filter((n) => n.id !== id),
         selectedNote: state.selectedNote?.id === id ? null : state.selectedNote,
@@ -164,7 +162,8 @@ export const useNoteStore = create<NoteStore>()(
     if (!selectedNote) return;
 
     try {
-      const updated = await updateNote(selectedNote.id, { title, content });
+      const storage = getStorageCoordinator();
+      const updated = await storage.updateNote(selectedNote.id, { title, content });
       set((state) => {
         const otherNotes = state.notes.filter((n) => n.id !== updated.id);
         return {
@@ -179,7 +178,8 @@ export const useNoteStore = create<NoteStore>()(
 
   toggleStar: async (note: Note) => {
     try {
-      const updated = await updateNote(note.id, { starred: note.starred ? 0 : 1 });
+      const storage = getStorageCoordinator();
+      const updated = await storage.updateNote(note.id, { starred: note.starred ? 0 : 1 });
       const { loadStarred } = get();
       set((state) => {
         const otherNotes = state.notes.filter((n) => n.id !== updated.id);
