@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Cloud, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { useSettingsStore } from "../store/settingsStore";
-import { useSyncStore } from "../store/syncStore";
-import { D1Provider } from "../lib/storage/d1";
-import { getStorageCoordinator } from "../lib/storage/coordinator";
-import { Switch } from "./ui/switch";
+import { useSettingsStore } from "../../store/settingsStore";
+import { useSyncStore } from "../../store/syncStore";
+import { D1Provider } from "../../lib/storage/d1";
+import { getStorageCoordinator } from "../../lib/storage/coordinator";
+import { Switch } from "../ui/switch";
 
 export function CloudSettings() {
   const {

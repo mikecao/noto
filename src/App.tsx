@@ -4,7 +4,7 @@ import { useNoteStore } from "./store/noteStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { Sidebar } from "./components/Sidebar";
 import { NoteEditor } from "./components/NoteEditor";
-import { CloudSettings } from "./components/CloudSettings";
+import { CloudSettings } from "./components/settings/CloudSettings";
 
 function App() {
   const loading = useNoteStore((state) => state.loading);
