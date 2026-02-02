@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { NotebookPen, Plus, Search, Star, Trash, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ArrowDownUp, Check, NotebookPen, Plus, Search, Star, Trash, X } from "lucide-react";
 import { useNoteStore } from "../store/noteStore";
+import { useSettingsStore, type SortBy } from "../store/settingsStore";
 import { NotePreview } from "./NotePreview";
 
 export function Sidebar() {
@@ -20,15 +21,47 @@ export function Sidebar() {
   const setView = useNoteStore((state) => state.setView);
   const loadStarred = useNoteStore((state) => state.loadStarred);
   const loadTrash = useNoteStore((state) => state.loadTrash);
+  const sortBy = useSettingsStore((state) => state.sortBy);
+  const setSortBy = useSettingsStore((state) => state.setSortBy);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setSortMenuOpen(false);
+      }
+    }
+    if (sortMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sortMenuOpen]);
 
   const displayedNotes =
     view === "notes" ? notes : view === "starred" ? starred : trash;
-  const filteredNotes = displayedNotes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredNotes = displayedNotes
+    .filter(
+      (note) =>
+        note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortBy === "created") {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+
+  const sortOptions: { value: SortBy; label: string }[] = [
+    { value: "updated", label: "Modified" },
+    { value: "created", label: "Created" },
+    { value: "title", label: "Title" },
+  ];
 
   function handleViewChange(newView: "notes" | "starred" | "trash") {
     if (newView === "starred") {
@@ -88,8 +121,8 @@ export function Sidebar() {
           </button>
         )}
       </div>
-      <div className="px-2">
-        <div className="relative">
+      <div className="px-2 flex gap-1">
+        <div className="relative flex-1">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -113,6 +146,33 @@ export function Sidebar() {
             >
               <X size={16} />
             </button>
+          )}
+        </div>
+        <div className="relative" ref={sortMenuRef}>
+          <button
+            type="button"
+            onClick={() => setSortMenuOpen(!sortMenuOpen)}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            <ArrowDownUp size={16} />
+          </button>
+          {sortMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-28">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setSortBy(option.value);
+                    setSortMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 flex items-center justify-between"
+                >
+                  {option.label}
+                  {sortBy === option.value && <Check size={14} className="text-gray-600" />}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       </div>
