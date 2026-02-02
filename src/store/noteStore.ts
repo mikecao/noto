@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   type Note,
   getAllNotes,
@@ -38,7 +39,9 @@ interface NoteStore {
   toggleStar: (note: Note) => Promise<void>;
 }
 
-export const useNoteStore = create<NoteStore>((set, get) => ({
+export const useNoteStore = create<NoteStore>()(
+  persist(
+    (set, get) => ({
   notes: [],
   starred: [],
   trash: [],
@@ -190,4 +193,15 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       console.error("Failed to toggle star:", err);
     }
   },
-}));
+    }),
+    {
+      name: "noto-notes",
+      partialize: (state) => ({
+        view: state.view,
+        selectedNote: state.selectedNote,
+        title: state.title,
+        content: state.content,
+      }),
+    }
+  )
+);
