@@ -6,7 +6,9 @@ A simple notes app built with Tauri, React, and TypeScript.
 
 - Create, edit, and delete notes
 - Search notes by title or content
+- Find within note content (Ctrl/Cmd+F)
 - Pin notes to keep them at the top
+- Star notes for quick access
 - Auto-save as you type
 - Local SQLite database storage
 
