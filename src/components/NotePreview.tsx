@@ -38,8 +38,24 @@ export function NotePreview({
         <p
           className={`font-medium truncate leading-6 grid grid-cols-[16px_1fr] items-center gap-1 ${note.title ? "text-gray-900" : "text-gray-400"}`}
         >
-          <span className="flex justify-center">
-            {note.starred ? <Star size={14} className="shrink-0" /> : null}
+          <span
+            role="button"
+            tabIndex={-1}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStar();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.stopPropagation();
+                onToggleStar();
+              }
+            }}
+            className={`flex justify-center cursor-pointer ${
+              note.starred ? "" : "opacity-0 group-hover:opacity-30 hover:!opacity-100"
+            }`}
+          >
+            <Star size={14} className="shrink-0" />
           </span>
           <span className="truncate">{note.title || "Untitled"}</span>
         </p>
