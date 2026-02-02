@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Cloud, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Cloud, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useSyncStore } from "../../store/syncStore";
+import { useNoteStore } from "../../store/noteStore";
 import { D1Provider } from "../../lib/storage/d1";
 import { getStorageCoordinator } from "../../lib/storage/coordinator";
 import { Switch } from "../ui/switch";
+
+type SyncStrategy = "merge" | "replace" | null;
 
 export function CloudSettings() {
   const {
@@ -18,9 +21,15 @@ export function CloudSettings() {
 
   const { queue } = useSyncStore();
 
+  const { loadNotes, loadStarred, loadTrash } = useNoteStore();
+
   const [accountId, setAccountId] = useState(d1Config?.accountId ?? "");
   const [databaseId, setDatabaseId] = useState(d1Config?.databaseId ?? "");
   const [apiToken, setApiToken] = useState(d1Config?.apiToken ?? "");
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [syncStrategy, setSyncStrategy] = useState<SyncStrategy>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const hasChanges =
     accountId !== (d1Config?.accountId ?? "") ||
@@ -65,13 +74,72 @@ export function CloudSettings() {
       // Don't enable without config
       return;
     }
-    setCloudEnabled(enabled);
+
     if (enabled) {
       const coordinator = getStorageCoordinator();
-      // Process any pending operations first, then sync from cloud
-      await coordinator.processQueue();
-      await coordinator.syncFromCloud();
+      const hasLocal = await coordinator.hasLocalNotes();
+
+      if (hasLocal) {
+        // Show dialog to choose sync strategy
+        setShowSyncDialog(true);
+        return;
+      }
+
+      // No local notes, just enable and sync from cloud
+      setCloudEnabled(true);
+      setIsSyncing(true);
+      setSyncError(null);
+
+      try {
+        await coordinator.syncFromCloud();
+        await Promise.all([loadNotes(), loadStarred(), loadTrash()]);
+      } catch (error) {
+        console.error("Sync failed:", error);
+        setSyncError(error instanceof Error ? error.message : "Sync failed");
+        setCloudEnabled(false);
+      } finally {
+        setIsSyncing(false);
+      }
+    } else {
+      setCloudEnabled(false);
     }
+  }
+
+  async function handleSyncStrategyConfirm() {
+    if (!syncStrategy) return;
+
+    const coordinator = getStorageCoordinator();
+    setShowSyncDialog(false);
+    setCloudEnabled(true);
+    setIsSyncing(true);
+    setSyncError(null);
+
+    try {
+      if (syncStrategy === "merge") {
+        // Current behavior: push local, then pull cloud
+        await coordinator.processQueue();
+        await coordinator.syncFromCloud();
+      } else {
+        // Replace: discard local, pull cloud only
+        await coordinator.replaceLocalWithCloud();
+      }
+
+      // Refresh note stores after sync
+      await Promise.all([loadNotes(), loadStarred(), loadTrash()]);
+    } catch (error) {
+      console.error("Sync failed:", error);
+      setSyncError(error instanceof Error ? error.message : "Sync failed");
+      // Disable cloud sync if it failed
+      setCloudEnabled(false);
+    } finally {
+      setIsSyncing(false);
+      setSyncStrategy(null);
+    }
+  }
+
+  function handleSyncDialogCancel() {
+    setShowSyncDialog(false);
+    setSyncStrategy(null);
   }
 
   return (
@@ -171,7 +239,20 @@ export function CloudSettings() {
           />
         </div>
 
-        {cloudEnabled && queue.length > 0 && (
+        {isSyncing && (
+          <div className="mt-2 flex items-center gap-2">
+            <Loader2 size={14} className="animate-spin text-gray-500" />
+            <p className="text-xs text-gray-500">Syncing...</p>
+          </div>
+        )}
+
+        {syncError && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-600">{syncError}</p>
+          </div>
+        )}
+
+        {cloudEnabled && !isSyncing && queue.length > 0 && (
           <div className="mt-2 flex items-center gap-2">
             <p className="text-xs text-gray-500">
               {queue.length} pending operation{queue.length !== 1 && "s"} to sync
@@ -185,6 +266,89 @@ export function CloudSettings() {
           </div>
         )}
       </div>
+
+      {showSyncDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Local Notes Detected
+              </h3>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              You have notes on this device. How would you like to handle them when enabling cloud sync?
+            </p>
+
+            <div className="space-y-2 mb-6">
+              <label
+                className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                  syncStrategy === "merge"
+                    ? "border-gray-900 bg-gray-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="syncStrategy"
+                  value="merge"
+                  checked={syncStrategy === "merge"}
+                  onChange={() => setSyncStrategy("merge")}
+                  className="mt-0.5"
+                />
+                <div>
+                  <span className="font-medium text-gray-900">Merge</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Keep local notes and sync them to the cloud. Cloud notes will also be downloaded.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                  syncStrategy === "replace"
+                    ? "border-gray-900 bg-gray-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="syncStrategy"
+                  value="replace"
+                  checked={syncStrategy === "replace"}
+                  onChange={() => setSyncStrategy("replace")}
+                  className="mt-0.5"
+                />
+                <div>
+                  <span className="font-medium text-gray-900">Replace local with cloud</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Delete all local notes and download only cloud notes. Local notes will be permanently lost.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={handleSyncDialogCancel}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSyncStrategyConfirm}
+                disabled={!syncStrategy}
+                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

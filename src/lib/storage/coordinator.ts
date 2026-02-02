@@ -125,7 +125,12 @@ export class StorageCoordinator implements StorageProvider {
   // Sync all notes from cloud to local
   async syncFromCloud(): Promise<void> {
     const d1 = this.getD1();
-    if (!d1 || !isOnline()) return;
+    if (!d1) {
+      throw new Error("Cloud sync is not configured");
+    }
+    if (!isOnline()) {
+      throw new Error("No internet connection");
+    }
 
     const { setSyncing, setError, setLastSync } = useSyncStore.getState();
     setSyncing(true);
@@ -147,9 +152,53 @@ export class StorageCoordinator implements StorageProvider {
     } catch (error) {
       console.error("Failed to sync from cloud:", error);
       setError("Failed to sync from cloud");
+      throw error; // Re-throw so UI can handle it
     } finally {
       setSyncing(false);
     }
+  }
+
+  // Replace local notes with cloud data (discard local, pull from cloud)
+  async replaceLocalWithCloud(): Promise<void> {
+    const d1 = this.getD1();
+    if (!d1) {
+      throw new Error("Cloud sync is not configured");
+    }
+    if (!isOnline()) {
+      throw new Error("No internet connection");
+    }
+
+    const { setSyncing, setError, setLastSync, clearQueue } = useSyncStore.getState();
+    setSyncing(true);
+
+    try {
+      // Clear the pending operations queue (don't push local changes)
+      clearQueue();
+
+      // Clear all local notes
+      await this.sqlite.clearAllNotes();
+
+      // Pull all notes from cloud
+      const cloudNotes = await d1.getAllNotesIncludingDeleted();
+      for (const cloudNote of cloudNotes) {
+        await this.sqlite.upsertNote(cloudNote);
+      }
+
+      setLastSync(Date.now());
+      setError(null);
+    } catch (error) {
+      console.error("Failed to replace local with cloud:", error);
+      setError("Failed to sync from cloud");
+      throw error; // Re-throw so UI can handle it
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  // Check if there are local notes
+  async hasLocalNotes(): Promise<boolean> {
+    const count = await this.sqlite.getNotesCount();
+    return count > 0;
   }
 
   // StorageProvider implementation

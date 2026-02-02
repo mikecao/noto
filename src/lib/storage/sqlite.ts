@@ -139,6 +139,19 @@ export class SQLiteProvider implements StorageProvider {
       "SELECT * FROM notes ORDER BY updated_at DESC"
     );
   }
+
+  async clearAllNotes(): Promise<void> {
+    const database = await this.getDb();
+    await database.execute("DELETE FROM notes");
+  }
+
+  async getNotesCount(): Promise<number> {
+    const database = await this.getDb();
+    const result = await database.select<{ count: number }[]>(
+      "SELECT COUNT(*) as count FROM notes"
+    );
+    return result[0]?.count ?? 0;
+  }
 }
 
 // Singleton instance
