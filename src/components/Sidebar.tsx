@@ -176,6 +176,9 @@ export function Sidebar() {
           )}
         </div>
       </div>
+      <div className="px-4 pt-4 text-xs text-gray-500">
+        {filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}
+      </div>
       <nav className="flex-1 overflow-y-auto">
         {filteredNotes.length === 0 ? (
           <p className="p-4 text-gray-500 text-sm">
