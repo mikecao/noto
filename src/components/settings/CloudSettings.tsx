@@ -21,7 +21,7 @@ export function CloudSettings() {
 
   const { queue } = useSyncStore();
 
-  const { loadNotes, loadStarred, loadTrash } = useNoteStore();
+  const { loadNotes } = useNoteStore();
 
   const [accountId, setAccountId] = useState(d1Config?.accountId ?? "");
   const [databaseId, setDatabaseId] = useState(d1Config?.databaseId ?? "");
@@ -95,7 +95,7 @@ export function CloudSettings() {
       try {
         await coordinator.initializeCloud();
         await coordinator.syncFromCloud();
-        await Promise.all([loadNotes(), loadStarred(), loadTrash()]);
+        await loadNotes();
       } catch (error) {
         console.error("Sync failed:", error);
         setSyncError(error instanceof Error ? error.message : "Sync failed");
@@ -130,7 +130,7 @@ export function CloudSettings() {
       }
 
       // Refresh note stores after sync
-      await Promise.all([loadNotes(), loadStarred(), loadTrash()]);
+      await loadNotes();
     } catch (error) {
       console.error("Sync failed:", error);
       setSyncError(error instanceof Error ? error.message : "Sync failed");

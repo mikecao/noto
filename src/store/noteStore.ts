@@ -7,8 +7,6 @@ type View = "notes" | "starred" | "trash";
 
 interface NoteStore {
   notes: Note[];
-  starred: Note[];
-  trash: Note[];
   view: View;
   selectedNote: Note | null;
   title: string;
@@ -16,8 +14,6 @@ interface NoteStore {
   loading: boolean;
 
   loadNotes: () => Promise<void>;
-  loadStarred: () => Promise<void>;
-  loadTrash: () => Promise<void>;
   setView: (view: View) => void;
   createNote: () => Promise<void>;
   selectNote: (note: Note) => void;
@@ -34,8 +30,6 @@ export const useNoteStore = create<NoteStore>()(
   persist(
     (set, get) => ({
   notes: [],
-  starred: [],
-  trash: [],
   view: "notes",
   selectedNote: null,
   title: "",
@@ -45,32 +39,12 @@ export const useNoteStore = create<NoteStore>()(
   loadNotes: async () => {
     try {
       const storage = getStorageCoordinator();
-      const allNotes = await storage.getAllNotes();
+      const allNotes = await storage.getAllNotesIncludingDeleted();
       set({ notes: allNotes });
     } catch (err) {
       console.error("Failed to load notes:", err);
     } finally {
       set({ loading: false });
-    }
-  },
-
-  loadStarred: async () => {
-    try {
-      const storage = getStorageCoordinator();
-      const starredNotes = await storage.getStarredNotes();
-      set({ starred: starredNotes });
-    } catch (err) {
-      console.error("Failed to load starred:", err);
-    }
-  },
-
-  loadTrash: async () => {
-    try {
-      const storage = getStorageCoordinator();
-      const deletedNotes = await storage.getDeletedNotes();
-      set({ trash: deletedNotes });
-    } catch (err) {
-      console.error("Failed to load trash:", err);
     }
   },
 
@@ -105,14 +79,16 @@ export const useNoteStore = create<NoteStore>()(
     try {
       const storage = getStorageCoordinator();
       await storage.deleteNote(id);
-      const { loadTrash } = get();
+      // Re-fetch to get the updated note with deleted_at timestamp
+      const updatedNote = await storage.getNoteById(id);
       set((state) => ({
-        notes: state.notes.filter((n) => n.id !== id),
+        notes: updatedNote
+          ? state.notes.map((n) => n.id === id ? updatedNote : n)
+          : state.notes.filter((n) => n.id !== id),
         selectedNote: state.selectedNote?.id === id ? null : state.selectedNote,
         title: state.selectedNote?.id === id ? "" : state.title,
         content: state.selectedNote?.id === id ? "" : state.content,
       }));
-      await loadTrash();
     } catch (err) {
       console.error("Failed to delete note:", err);
     }
@@ -123,8 +99,7 @@ export const useNoteStore = create<NoteStore>()(
       const storage = getStorageCoordinator();
       const restored = await storage.restoreNote(id);
       set((state) => ({
-        notes: [restored, ...state.notes],
-        trash: state.trash.filter((n) => n.id !== id),
+        notes: state.notes.map((n) => n.id === id ? restored : n),
         selectedNote: null,
         title: "",
         content: "",
@@ -139,7 +114,7 @@ export const useNoteStore = create<NoteStore>()(
       const storage = getStorageCoordinator();
       await storage.permanentlyDeleteNote(id);
       set((state) => ({
-        trash: state.trash.filter((n) => n.id !== id),
+        notes: state.notes.filter((n) => n.id !== id),
         selectedNote: state.selectedNote?.id === id ? null : state.selectedNote,
         title: state.selectedNote?.id === id ? "" : state.title,
         content: state.selectedNote?.id === id ? "" : state.content,
@@ -164,13 +139,10 @@ export const useNoteStore = create<NoteStore>()(
     try {
       const storage = getStorageCoordinator();
       const updated = await storage.updateNote(selectedNote.id, { title, content });
-      set((state) => {
-        const otherNotes = state.notes.filter((n) => n.id !== updated.id);
-        return {
-          notes: [updated, ...otherNotes],
-          selectedNote: updated,
-        };
-      });
+      set((state) => ({
+        notes: state.notes.map((n) => n.id === updated.id ? updated : n),
+        selectedNote: updated,
+      }));
     } catch (err) {
       console.error("Failed to save note:", err);
     }
@@ -180,15 +152,10 @@ export const useNoteStore = create<NoteStore>()(
     try {
       const storage = getStorageCoordinator();
       const updated = await storage.updateNote(note.id, { starred: note.starred ? 0 : 1 });
-      const { loadStarred } = get();
-      set((state) => {
-        const otherNotes = state.notes.filter((n) => n.id !== updated.id);
-        return {
-          notes: [updated, ...otherNotes],
-          selectedNote: state.selectedNote?.id === updated.id ? updated : state.selectedNote,
-        };
-      });
-      await loadStarred();
+      set((state) => ({
+        notes: state.notes.map((n) => n.id === updated.id ? updated : n),
+        selectedNote: state.selectedNote?.id === updated.id ? updated : state.selectedNote,
+      }));
     } catch (err) {
       console.error("Failed to toggle star:", err);
     }

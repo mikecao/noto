@@ -9,19 +9,19 @@ import { NoteList } from "./sidebar/NoteList";
 
 export function Sidebar() {
   const notes = useNoteStore((state) => state.notes);
-  const starred = useNoteStore((state) => state.starred);
-  const trash = useNoteStore((state) => state.trash);
   const view = useNoteStore((state) => state.view);
   const setView = useNoteStore((state) => state.setView);
-  const loadStarred = useNoteStore((state) => state.loadStarred);
-  const loadTrash = useNoteStore((state) => state.loadTrash);
   const sortBy = useSettingsStore((state) => state.sortBy);
 
   const [searchQuery, setSearchQuery] = useState("");
   const sidebarRef = useRef<HTMLElement>(null);
 
-  const displayedNotes =
-    view === "notes" ? notes : view === "starred" ? starred : trash;
+  // Filter notes based on current view
+  const displayedNotes = notes.filter((note) => {
+    if (view === "trash") return note.deleted_at !== null;
+    if (view === "starred") return note.starred && !note.deleted_at;
+    return !note.deleted_at; // "notes" view
+  });
 
   const filteredNotes = displayedNotes
     .filter(
@@ -34,17 +34,12 @@ export function Sidebar() {
         return a.title.localeCompare(b.title);
       }
       if (sortBy === "created") {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return b.created_at - a.created_at;
       }
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      return b.updated_at - a.updated_at;
     });
 
   function handleViewChange(newView: "notes" | "starred" | "trash") {
-    if (newView === "starred") {
-      loadStarred();
-    } else if (newView === "trash") {
-      loadTrash();
-    }
     setView(newView);
     setSearchQuery("");
   }
