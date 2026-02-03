@@ -32,18 +32,17 @@ export function CloudSettings() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-
-  const hasChanges =
-    accountId !== (d1Config?.accountId ?? "") ||
-    databaseId !== (d1Config?.databaseId ?? "") ||
-    apiToken !== (d1Config?.apiToken ?? "");
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+  const [testPassed, setTestPassed] = useState(false);
 
   const canTest = accountId && databaseId && apiToken;
+  const isConnected = cloudEnabled && d1Config && connectionStatus === "success";
 
   async function handleTestConnection() {
     if (!canTest) return;
 
     setConnectionStatus("testing");
+    setTestPassed(false);
 
     try {
       const testProvider = new D1Provider({
@@ -53,42 +52,33 @@ export function CloudSettings() {
       });
       const success = await testProvider.testConnection();
       setConnectionStatus(success ? "success" : "failed");
+      setTestPassed(success);
     } catch {
       setConnectionStatus("failed");
+      setTestPassed(false);
     }
-  }
-
-  function handleSaveConfig() {
-    if (!canTest) return;
-
-    setD1Config({
-      accountId,
-      databaseId,
-      apiToken,
-    });
-
-    // Reset the coordinator so it picks up new config
-    getStorageCoordinator().resetD1();
   }
 
   async function handleToggleCloud(enabled: boolean) {
-    if (enabled && !d1Config) {
-      // Don't enable without config
-      return;
-    }
-
     if (enabled) {
+      // Just enable to show config section
+      setCloudEnabled(true);
+
+      // If already has valid config, check for local notes
+      if (!d1Config || connectionStatus !== "success") {
+        return;
+      }
+
+      // Already configured, start syncing
       const coordinator = getStorageCoordinator();
       const hasLocal = await coordinator.hasLocalNotes();
 
       if (hasLocal) {
-        // Show dialog to choose sync strategy
         setShowSyncDialog(true);
         return;
       }
 
       // No local notes, just enable and sync from cloud
-      setCloudEnabled(true);
       setIsSyncing(true);
       setSyncError(null);
 
@@ -108,12 +98,47 @@ export function CloudSettings() {
     }
   }
 
+  async function handleConnect() {
+    if (!testPassed) return;
+
+    // Save config first
+    setD1Config({
+      accountId,
+      databaseId,
+      apiToken,
+    });
+    getStorageCoordinator().resetD1();
+
+    const coordinator = getStorageCoordinator();
+    const hasLocal = await coordinator.hasLocalNotes();
+
+    if (hasLocal) {
+      setShowSyncDialog(true);
+      return;
+    }
+
+    // No local notes, just sync from cloud
+    setIsSyncing(true);
+    setSyncError(null);
+
+    try {
+      await coordinator.initializeCloud();
+      await coordinator.syncFromCloud();
+      await loadNotes();
+      setTestPassed(false); // Clear test state after successful connect
+    } catch (error) {
+      console.error("Sync failed:", error);
+      setSyncError(error instanceof Error ? error.message : "Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
   async function handleSyncStrategyConfirm() {
     if (!syncStrategy) return;
 
     const coordinator = getStorageCoordinator();
     setShowSyncDialog(false);
-    setCloudEnabled(true);
     setIsSyncing(true);
     setSyncError(null);
 
@@ -121,21 +146,17 @@ export function CloudSettings() {
       await coordinator.initializeCloud();
 
       if (syncStrategy === "merge") {
-        // Push all local notes to cloud, then pull cloud notes
         await coordinator.pushLocalToCloud();
         await coordinator.syncFromCloud();
       } else {
-        // Replace: discard local, pull cloud only
         await coordinator.replaceLocalWithCloud();
       }
 
-      // Refresh note stores after sync
       await loadNotes();
+      setTestPassed(false); // Clear test state after successful connect
     } catch (error) {
       console.error("Sync failed:", error);
       setSyncError(error instanceof Error ? error.message : "Sync failed");
-      // Disable cloud sync if it failed
-      setCloudEnabled(false);
     } finally {
       setIsSyncing(false);
       setSyncStrategy(null);
@@ -166,139 +187,192 @@ export function CloudSettings() {
     }
   }
 
+  function handleDisconnect() {
+    setD1Config(null);
+    setCloudEnabled(false);
+    setConnectionStatus(null);
+    setTestPassed(false);
+    setAccountId("");
+    setDatabaseId("");
+    setApiToken("");
+    getStorageCoordinator().resetD1();
+    setShowDisconnectDialog(false);
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-gray-700">
-        <Cloud size={18} />
-        <span className="font-medium">Cloudflare D1 Sync</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-gray-700">
+          <Cloud size={18} />
+          <span className="font-medium">Cloud Sync</span>
+        </div>
+        <Switch
+          checked={cloudEnabled}
+          onCheckedChange={handleToggleCloud}
+        />
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Account ID</label>
-          <input
-            type="text"
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            placeholder="Your Cloudflare account ID"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-        </div>
+      {cloudEnabled && (
+        <div className="space-y-3">
+          {isConnected ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <CheckCircle size={14} />
+                <span>Connected to Cloudflare D1</span>
+              </div>
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Database ID</label>
-          <input
-            type="text"
-            value={databaseId}
-            onChange={(e) => setDatabaseId(e.target.value)}
-            placeholder="Your D1 database ID"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-        </div>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Account ID: </span>
+                  <span className="text-gray-700">{d1Config?.accountId}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Database ID: </span>
+                  <span className="text-gray-700">{d1Config?.databaseId}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">API Token: </span>
+                  <span className="text-gray-700">••••••••</span>
+                </div>
+              </div>
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">API Token</label>
-          <input
-            type="password"
-            value={apiToken}
-            onChange={(e) => setApiToken(e.target.value)}
-            placeholder="Your Cloudflare API token"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-        </div>
+              {isSyncing && (
+                <div className="flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin text-gray-500" />
+                  <p className="text-xs text-gray-500">Syncing...</p>
+                </div>
+              )}
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleTestConnection}
-            disabled={!canTest || connectionStatus === "testing"}
-            className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            {connectionStatus === "testing" ? (
-              <span className="flex items-center gap-1">
-                <Loader2 size={14} className="animate-spin" />
-                Testing...
-              </span>
-            ) : (
-              "Test Connection"
-            )}
-          </button>
+              {syncError && (
+                <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-600">{syncError}</p>
+                </div>
+              )}
 
-          {hasChanges && (
-            <button
-              onClick={handleSaveConfig}
-              disabled={!canTest}
-              className="px-3 py-1.5 text-sm bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-            >
-              Save
-            </button>
+              {!isSyncing && queue.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-gray-500">
+                    {queue.length} pending operation{queue.length !== 1 && "s"} to sync
+                  </p>
+                  <button
+                    onClick={() => getStorageCoordinator().processQueue()}
+                    className="text-xs text-gray-600 hover:text-gray-900 underline"
+                  >
+                    Sync now
+                  </button>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={() => setShowResetDialog(true)}
+                  className="px-3 py-1.5 text-xs text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Reset cloud database
+                </button>
+                <button
+                  onClick={() => setShowDisconnectDialog(true)}
+                  className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500">
+                Connect to Cloudflare D1 to sync notes across devices.
+              </p>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Account ID</label>
+                <input
+                  type="text"
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  placeholder="Your Cloudflare account ID"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Database ID</label>
+                <input
+                  type="text"
+                  value={databaseId}
+                  onChange={(e) => setDatabaseId(e.target.value)}
+                  placeholder="Your D1 database ID"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">API Token</label>
+                <input
+                  type="password"
+                  value={apiToken}
+                  onChange={(e) => setApiToken(e.target.value)}
+                  placeholder="Your Cloudflare API token"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleTestConnection}
+                  disabled={!canTest || connectionStatus === "testing"}
+                  className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                >
+                  {connectionStatus === "testing" ? (
+                    <span className="flex items-center gap-1">
+                      <Loader2 size={14} className="animate-spin" />
+                      Testing...
+                    </span>
+                  ) : (
+                    "Test Connection"
+                  )}
+                </button>
+
+                {connectionStatus === "success" && (
+                  <span className="flex items-center gap-1 text-sm text-green-600">
+                    <CheckCircle size={14} />
+                    Valid
+                  </span>
+                )}
+
+                {testPassed && !isSyncing && (
+                  <button
+                    onClick={handleConnect}
+                    className="px-3 py-1.5 text-sm bg-gray-900 text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    Connect
+                  </button>
+                )}
+
+                {connectionStatus === "failed" && (
+                  <span className="flex items-center gap-1 text-sm text-red-600">
+                    <XCircle size={14} />
+                    Failed
+                  </span>
+                )}
+              </div>
+
+              {isSyncing && (
+                <div className="flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin text-gray-500" />
+                  <p className="text-xs text-gray-500">Connecting...</p>
+                </div>
+              )}
+
+              {syncError && (
+                <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-600">{syncError}</p>
+                </div>
+              )}
+            </>
           )}
-
-          {connectionStatus === "success" && (
-            <span className="flex items-center gap-1 text-sm text-green-600">
-              <CheckCircle size={14} />
-              Connected
-            </span>
-          )}
-
-          {connectionStatus === "failed" && (
-            <span className="flex items-center gap-1 text-sm text-red-600">
-              <XCircle size={14} />
-              Failed
-            </span>
-          )}
         </div>
-
-        {d1Config && connectionStatus === "success" && (
-          <button
-            onClick={() => setShowResetDialog(true)}
-            className="text-xs text-red-600 hover:text-red-700 underline"
-          >
-            Reset cloud database
-          </button>
-        )}
-      </div>
-
-      <div className="pt-2 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-sm text-gray-700">Enable Cloud Sync</span>
-            {!d1Config && (
-              <p className="text-xs text-gray-500">Save config first</p>
-            )}
-          </div>
-          <Switch
-            checked={cloudEnabled}
-            onCheckedChange={handleToggleCloud}
-          />
-        </div>
-
-        {isSyncing && (
-          <div className="mt-2 flex items-center gap-2">
-            <Loader2 size={14} className="animate-spin text-gray-500" />
-            <p className="text-xs text-gray-500">Syncing...</p>
-          </div>
-        )}
-
-        {syncError && (
-          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-xs text-red-600">{syncError}</p>
-          </div>
-        )}
-
-        {cloudEnabled && !isSyncing && queue.length > 0 && (
-          <div className="mt-2 flex items-center gap-2">
-            <p className="text-xs text-gray-500">
-              {queue.length} pending operation{queue.length !== 1 && "s"} to sync
-            </p>
-            <button
-              onClick={() => getStorageCoordinator().processQueue()}
-              className="text-xs text-gray-600 hover:text-gray-900 underline"
-            >
-              Sync now
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {showSyncDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -420,6 +494,40 @@ export function CloudSettings() {
                 ) : (
                   "Reset Database"
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDisconnectDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Cloud size={20} className="text-gray-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Disconnect Cloud Sync
+              </h3>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              This will remove your cloud credentials and disable syncing. Your local notes will remain on this device.
+            </p>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowDisconnectDialog(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisconnect}
+                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Disconnect
               </button>
             </div>
           </div>
