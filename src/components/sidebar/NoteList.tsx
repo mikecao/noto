@@ -16,6 +16,7 @@ export function NoteList({ notes, searchQuery, sidebarRef }: NoteListProps) {
   const toggleStar = useNoteStore((state) => state.toggleStar);
   const deleteNote = useNoteStore((state) => state.deleteNote);
   const restoreNote = useNoteStore((state) => state.restoreNote);
+  const permanentlyDeleteNote = useNoteStore((state) => state.permanentlyDeleteNote);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -70,6 +71,7 @@ export function NoteList({ notes, searchQuery, sidebarRef }: NoteListProps) {
           onToggleStar={() => toggleStar(note)}
           onDelete={() => deleteNote(note.id)}
           onRestore={() => restoreNote(note.id)}
+          onPermanentDelete={() => permanentlyDeleteNote(note.id)}
         />
       ))}
     </ul>

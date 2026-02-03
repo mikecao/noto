@@ -1,4 +1,4 @@
-import { RotateCcw, Star, Trash } from "lucide-react";
+import { RotateCcw, Star, X, Trash2 } from "lucide-react";
 import type { Note } from "../lib/database";
 
 interface NotePreviewProps {
@@ -9,6 +9,7 @@ interface NotePreviewProps {
   onToggleStar: () => void;
   onDelete: () => void;
   onRestore?: () => void;
+  onPermanentDelete?: () => void;
 }
 
 export function NotePreview({
@@ -19,6 +20,7 @@ export function NotePreview({
   onToggleStar,
   onDelete,
   onRestore,
+  onPermanentDelete,
 }: NotePreviewProps) {
   return (
     <li className="group relative">
@@ -61,16 +63,30 @@ export function NotePreview({
         </p>
       </button>
       {isTrash ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRestore?.();
-          }}
-          className="absolute right-2 top-3 p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"
-        >
-          <RotateCcw size={14} />
-        </button>
+        <div className="absolute right-2 top-3 flex gap-1 opacity-0 group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRestore?.();
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded"
+            title="Restore"
+          >
+            <RotateCcw size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPermanentDelete?.();
+            }}
+            className="p-1 text-gray-400 hover:text-red-600 rounded"
+            title="Delete forever"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       ) : (
         <button
           type="button"
@@ -80,7 +96,7 @@ export function NotePreview({
           }}
           className="absolute right-2 top-3 p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"
         >
-          <Trash size={14} />
+          <X size={14} />
         </button>
       )}
     </li>
