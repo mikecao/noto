@@ -38,6 +38,33 @@ pub fn run() {
       description: "drop pinned column",
       sql: "ALTER TABLE notes DROP COLUMN pinned",
       kind: MigrationKind::Up,
+    },
+    Migration {
+      version: 6,
+      description: "convert id to uuid",
+      sql: "
+        -- Create new table with TEXT id
+        CREATE TABLE notes_new (
+          id TEXT PRIMARY KEY NOT NULL,
+          title TEXT NOT NULL DEFAULT '',
+          content TEXT NOT NULL DEFAULT '',
+          starred INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+          updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+          deleted_at INTEGER DEFAULT NULL
+        );
+        -- Copy existing notes with UUID conversion (using hex of random bytes as UUID-like string)
+        INSERT INTO notes_new (id, title, content, starred, created_at, updated_at, deleted_at)
+        SELECT
+          lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))),
+          title, content, starred, created_at, updated_at, deleted_at
+        FROM notes;
+        -- Drop old table
+        DROP TABLE notes;
+        -- Rename new table
+        ALTER TABLE notes_new RENAME TO notes;
+      ",
+      kind: MigrationKind::Up,
     }
   ];
 

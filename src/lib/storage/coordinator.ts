@@ -122,6 +122,47 @@ export class StorageCoordinator implements StorageProvider {
     setSyncing(false);
   }
 
+  // Initialize D1 schema (create table if not exists)
+  async initializeCloud(): Promise<void> {
+    const d1 = this.getD1();
+    if (!d1) {
+      throw new Error("Cloud sync is not configured");
+    }
+    if (!isOnline()) {
+      throw new Error("No internet connection");
+    }
+
+    await d1.initializeSchema();
+  }
+
+  // Push all local notes to cloud
+  async pushLocalToCloud(): Promise<void> {
+    const d1 = this.getD1();
+    if (!d1) {
+      throw new Error("Cloud sync is not configured");
+    }
+    if (!isOnline()) {
+      throw new Error("No internet connection");
+    }
+
+    const { setSyncing, setError } = useSyncStore.getState();
+    setSyncing(true);
+
+    try {
+      const localNotes = await this.sqlite.getAllNotesIncludingDeleted();
+      for (const localNote of localNotes) {
+        await d1.upsertNote(localNote);
+      }
+      setError(null);
+    } catch (error) {
+      console.error("Failed to push local to cloud:", error);
+      setError("Failed to push local notes to cloud");
+      throw error;
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   // Sync all notes from cloud to local
   async syncFromCloud(): Promise<void> {
     const d1 = this.getD1();
@@ -250,7 +291,7 @@ export class StorageCoordinator implements StorageProvider {
     return this.sqlite.getStarredNotes();
   }
 
-  async getNoteById(id: number): Promise<Note | null> {
+  async getNoteById(id: string): Promise<Note | null> {
     const d1 = this.getD1();
 
     if (d1 && isOnline()) {
@@ -276,7 +317,7 @@ export class StorageCoordinator implements StorageProvider {
     return note;
   }
 
-  async updateNote(id: number, input: UpdateNoteInput): Promise<Note> {
+  async updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
     // Local-first: write to SQLite immediately for responsive UI
     const note = await this.sqlite.updateNote(id, input);
 
@@ -288,7 +329,7 @@ export class StorageCoordinator implements StorageProvider {
     return note;
   }
 
-  async deleteNote(id: number): Promise<void> {
+  async deleteNote(id: string): Promise<void> {
     // Local-first: write to SQLite immediately for responsive UI
     await this.sqlite.deleteNote(id);
 
@@ -299,7 +340,7 @@ export class StorageCoordinator implements StorageProvider {
     }
   }
 
-  async restoreNote(id: number): Promise<Note> {
+  async restoreNote(id: string): Promise<Note> {
     // Local-first: write to SQLite immediately for responsive UI
     const note = await this.sqlite.restoreNote(id);
 
@@ -311,7 +352,7 @@ export class StorageCoordinator implements StorageProvider {
     return note;
   }
 
-  async permanentlyDeleteNote(id: number): Promise<void> {
+  async permanentlyDeleteNote(id: string): Promise<void> {
     // Local-first: write to SQLite immediately for responsive UI
     await this.sqlite.permanentlyDeleteNote(id);
 

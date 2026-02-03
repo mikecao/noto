@@ -30,6 +30,8 @@ export function CloudSettings() {
   const [syncStrategy, setSyncStrategy] = useState<SyncStrategy>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const hasChanges =
     accountId !== (d1Config?.accountId ?? "") ||
@@ -91,6 +93,7 @@ export function CloudSettings() {
       setSyncError(null);
 
       try {
+        await coordinator.initializeCloud();
         await coordinator.syncFromCloud();
         await Promise.all([loadNotes(), loadStarred(), loadTrash()]);
       } catch (error) {
@@ -115,9 +118,11 @@ export function CloudSettings() {
     setSyncError(null);
 
     try {
+      await coordinator.initializeCloud();
+
       if (syncStrategy === "merge") {
-        // Current behavior: push local, then pull cloud
-        await coordinator.processQueue();
+        // Push all local notes to cloud, then pull cloud notes
+        await coordinator.pushLocalToCloud();
         await coordinator.syncFromCloud();
       } else {
         // Replace: discard local, pull cloud only
@@ -140,6 +145,25 @@ export function CloudSettings() {
   function handleSyncDialogCancel() {
     setShowSyncDialog(false);
     setSyncStrategy(null);
+  }
+
+  async function handleResetCloud() {
+    if (!d1Config) return;
+
+    setIsResetting(true);
+    setSyncError(null);
+
+    try {
+      const provider = new D1Provider(d1Config);
+      await provider.resetDatabase();
+      setShowResetDialog(false);
+      setConnectionStatus("success");
+    } catch (error) {
+      console.error("Reset failed:", error);
+      setSyncError(error instanceof Error ? error.message : "Reset failed");
+    } finally {
+      setIsResetting(false);
+    }
   }
 
   return (
@@ -223,6 +247,15 @@ export function CloudSettings() {
             </span>
           )}
         </div>
+
+        {d1Config && connectionStatus === "success" && (
+          <button
+            onClick={() => setShowResetDialog(true)}
+            className="text-xs text-red-600 hover:text-red-700 underline"
+          >
+            Reset cloud database
+          </button>
+        )}
       </div>
 
       <div className="pt-2 border-t border-gray-100">
@@ -344,6 +377,49 @@ export function CloudSettings() {
                 className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResetDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle size={20} className="text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Reset Cloud Database
+              </h3>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              This will delete all notes in the cloud database and recreate the schema. This action cannot be undone.
+            </p>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowResetDialog(false)}
+                disabled={isResetting}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetCloud}
+                disabled={isResetting}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isResetting ? (
+                  <span className="flex items-center gap-1">
+                    <Loader2 size={14} className="animate-spin" />
+                    Resetting...
+                  </span>
+                ) : (
+                  "Reset Database"
+                )}
               </button>
             </div>
           </div>

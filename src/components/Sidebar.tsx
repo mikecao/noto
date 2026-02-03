@@ -54,8 +54,8 @@ export function Sidebar() {
       <div className="p-3 flex flex-col gap-3 max-h-screen">
         <SidebarNav onViewChange={handleViewChange} />
         <SearchInput value={searchQuery} onChange={setSearchQuery} />
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between text-gray-500">
+          <div className="flex items-center gap-2 pl-1 text-sm">
             <span>{filteredNotes.length} {filteredNotes.length === 1 ? "note" : "notes"}</span>
             <SyncStatus />
           </div>

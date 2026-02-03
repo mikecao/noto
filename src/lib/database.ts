@@ -23,7 +23,7 @@ export async function getStarredNotes(): Promise<Note[]> {
   return provider.getStarredNotes();
 }
 
-export async function getNoteById(id: number): Promise<Note | null> {
+export async function getNoteById(id: string): Promise<Note | null> {
   return provider.getNoteById(id);
 }
 
@@ -32,20 +32,20 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
 }
 
 export async function updateNote(
-  id: number,
+  id: string,
   input: UpdateNoteInput
 ): Promise<Note> {
   return provider.updateNote(id, input);
 }
 
-export async function deleteNote(id: number): Promise<void> {
+export async function deleteNote(id: string): Promise<void> {
   return provider.deleteNote(id);
 }
 
-export async function restoreNote(id: number): Promise<Note> {
+export async function restoreNote(id: string): Promise<Note> {
   return provider.restoreNote(id);
 }
 
-export async function permanentlyDeleteNote(id: number): Promise<void> {
+export async function permanentlyDeleteNote(id: string): Promise<void> {
   return provider.permanentlyDeleteNote(id);
 }

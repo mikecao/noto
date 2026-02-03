@@ -21,9 +21,9 @@ interface NoteStore {
   setView: (view: View) => void;
   createNote: () => Promise<void>;
   selectNote: (note: Note) => void;
-  deleteNote: (id: number) => Promise<void>;
-  restoreNote: (id: number) => Promise<void>;
-  permanentlyDeleteNote: (id: number) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+  restoreNote: (id: string) => Promise<void>;
+  permanentlyDeleteNote: (id: string) => Promise<void>;
   setTitle: (title: string) => void;
   setContent: (content: string) => void;
   saveNote: () => Promise<void>;
@@ -101,7 +101,7 @@ export const useNoteStore = create<NoteStore>()(
     });
   },
 
-  deleteNote: async (id: number) => {
+  deleteNote: async (id: string) => {
     try {
       const storage = getStorageCoordinator();
       await storage.deleteNote(id);
@@ -118,7 +118,7 @@ export const useNoteStore = create<NoteStore>()(
     }
   },
 
-  restoreNote: async (id: number) => {
+  restoreNote: async (id: string) => {
     try {
       const storage = getStorageCoordinator();
       const restored = await storage.restoreNote(id);
@@ -134,7 +134,7 @@ export const useNoteStore = create<NoteStore>()(
     }
   },
 
-  permanentlyDeleteNote: async (id: number) => {
+  permanentlyDeleteNote: async (id: string) => {
     try {
       const storage = getStorageCoordinator();
       await storage.permanentlyDeleteNote(id);

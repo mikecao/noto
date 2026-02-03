@@ -8,6 +8,10 @@ import type {
   D1Response,
 } from "./types";
 
+function generateUUID(): string {
+  return crypto.randomUUID();
+}
+
 export class D1Provider implements StorageProvider {
   constructor(private config: D1Config) {}
 
@@ -87,7 +91,7 @@ export class D1Provider implements StorageProvider {
     );
   }
 
-  async getNoteById(id: number): Promise<Note | null> {
+  async getNoteById(id: string): Promise<Note | null> {
     const results = await this.query<Note>(
       "SELECT * FROM notes WHERE id = ?1",
       [id]
@@ -97,19 +101,17 @@ export class D1Provider implements StorageProvider {
 
   async createNote(input: CreateNoteInput): Promise<Note> {
     const now = Math.floor(Date.now() / 1000);
-    const result = await this.execute(
-      "INSERT INTO notes (title, content, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
-      [input.title, input.content, now, now]
+    const id = generateUUID();
+    await this.execute(
+      "INSERT INTO notes (id, title, content, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+      [id, input.title, input.content, now, now]
     );
-    if (result.lastInsertId === undefined) {
-      throw new Error("Failed to get insert ID from D1");
-    }
-    const note = await this.getNoteById(result.lastInsertId);
+    const note = await this.getNoteById(id);
     if (!note) throw new Error("Failed to create note in D1");
     return note;
   }
 
-  async updateNote(id: number, input: UpdateNoteInput): Promise<Note> {
+  async updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
     const now = Math.floor(Date.now() / 1000);
     const existing = await this.getNoteById(id);
     if (!existing) throw new Error("Note not found in D1");
@@ -128,7 +130,7 @@ export class D1Provider implements StorageProvider {
     return updated;
   }
 
-  async deleteNote(id: number): Promise<void> {
+  async deleteNote(id: string): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
     await this.execute("UPDATE notes SET deleted_at = ?1 WHERE id = ?2", [
       now,
@@ -136,7 +138,7 @@ export class D1Provider implements StorageProvider {
     ]);
   }
 
-  async restoreNote(id: number): Promise<Note> {
+  async restoreNote(id: string): Promise<Note> {
     await this.execute("UPDATE notes SET deleted_at = NULL WHERE id = ?1", [
       id,
     ]);
@@ -145,7 +147,7 @@ export class D1Provider implements StorageProvider {
     return note;
   }
 
-  async permanentlyDeleteNote(id: number): Promise<void> {
+  async permanentlyDeleteNote(id: string): Promise<void> {
     await this.execute("DELETE FROM notes WHERE id = ?1", [id]);
   }
 
@@ -181,10 +183,33 @@ export class D1Provider implements StorageProvider {
   // Test connection by running a simple query
   async testConnection(): Promise<boolean> {
     try {
+      // Initialize schema first in case this is a new database
+      await this.initializeSchema();
       await this.query<{ count: number }>("SELECT COUNT(*) as count FROM notes");
       return true;
     } catch {
       return false;
     }
+  }
+
+  // Initialize the database schema if it doesn't exist
+  async initializeSchema(): Promise<void> {
+    await this.execute(`
+      CREATE TABLE IF NOT EXISTS notes (
+        id TEXT PRIMARY KEY NOT NULL,
+        title TEXT NOT NULL DEFAULT '',
+        content TEXT NOT NULL DEFAULT '',
+        starred INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+        deleted_at INTEGER DEFAULT NULL
+      )
+    `);
+  }
+
+  // Reset the database (drop and recreate table)
+  async resetDatabase(): Promise<void> {
+    await this.execute("DROP TABLE IF EXISTS notes");
+    await this.initializeSchema();
   }
 }

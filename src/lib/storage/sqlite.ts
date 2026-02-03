@@ -6,6 +6,10 @@ import type {
   StorageProvider,
 } from "./types";
 
+function generateUUID(): string {
+  return crypto.randomUUID();
+}
+
 export class SQLiteProvider implements StorageProvider {
   private db: Database | null = null;
 
@@ -37,7 +41,7 @@ export class SQLiteProvider implements StorageProvider {
     );
   }
 
-  async getNoteById(id: number): Promise<Note | null> {
+  async getNoteById(id: string): Promise<Note | null> {
     const database = await this.getDb();
     const results = await database.select<Note[]>(
       "SELECT * FROM notes WHERE id = $1",
@@ -49,19 +53,17 @@ export class SQLiteProvider implements StorageProvider {
   async createNote(input: CreateNoteInput): Promise<Note> {
     const database = await this.getDb();
     const now = Math.floor(Date.now() / 1000);
-    const result = await database.execute(
-      "INSERT INTO notes (title, content, created_at, updated_at) VALUES ($1, $2, $3, $4)",
-      [input.title, input.content, now, now]
+    const id = generateUUID();
+    await database.execute(
+      "INSERT INTO notes (id, title, content, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
+      [id, input.title, input.content, now, now]
     );
-    if (result.lastInsertId === undefined) {
-      throw new Error("Failed to get insert ID");
-    }
-    const note = await this.getNoteById(result.lastInsertId);
+    const note = await this.getNoteById(id);
     if (!note) throw new Error("Failed to create note");
     return note;
   }
 
-  async updateNote(id: number, input: UpdateNoteInput): Promise<Note> {
+  async updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
     const database = await this.getDb();
     const now = Math.floor(Date.now() / 1000);
     const existing = await this.getNoteById(id);
@@ -81,7 +83,7 @@ export class SQLiteProvider implements StorageProvider {
     return updated;
   }
 
-  async deleteNote(id: number): Promise<void> {
+  async deleteNote(id: string): Promise<void> {
     const database = await this.getDb();
     const now = Math.floor(Date.now() / 1000);
     await database.execute("UPDATE notes SET deleted_at = $1 WHERE id = $2", [
@@ -90,7 +92,7 @@ export class SQLiteProvider implements StorageProvider {
     ]);
   }
 
-  async restoreNote(id: number): Promise<Note> {
+  async restoreNote(id: string): Promise<Note> {
     const database = await this.getDb();
     await database.execute("UPDATE notes SET deleted_at = NULL WHERE id = $1", [
       id,
@@ -100,7 +102,7 @@ export class SQLiteProvider implements StorageProvider {
     return note;
   }
 
-  async permanentlyDeleteNote(id: number): Promise<void> {
+  async permanentlyDeleteNote(id: string): Promise<void> {
     const database = await this.getDb();
     await database.execute("DELETE FROM notes WHERE id = $1", [id]);
   }

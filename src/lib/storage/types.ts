@@ -1,6 +1,6 @@
 // Note interface - matches SQLite schema
 export interface Note {
-  id: number;
+  id: string;
   title: string;
   content: string;
   starred: number;
@@ -17,12 +17,12 @@ export interface StorageProvider {
   getAllNotes(): Promise<Note[]>;
   getDeletedNotes(): Promise<Note[]>;
   getStarredNotes(): Promise<Note[]>;
-  getNoteById(id: number): Promise<Note | null>;
+  getNoteById(id: string): Promise<Note | null>;
   createNote(input: CreateNoteInput): Promise<Note>;
-  updateNote(id: number, input: UpdateNoteInput): Promise<Note>;
-  deleteNote(id: number): Promise<void>;
-  restoreNote(id: number): Promise<Note>;
-  permanentlyDeleteNote(id: number): Promise<void>;
+  updateNote(id: string, input: UpdateNoteInput): Promise<Note>;
+  deleteNote(id: string): Promise<void>;
+  restoreNote(id: string): Promise<Note>;
+  permanentlyDeleteNote(id: string): Promise<void>;
   // For sync operations
   upsertNote(note: Note): Promise<Note>;
   getAllNotesIncludingDeleted(): Promise<Note[]>;
@@ -39,7 +39,7 @@ export interface D1Config {
 export interface QueuedOperation {
   id: string;
   type: "create" | "update" | "delete" | "restore" | "permanentDelete";
-  noteId: number;
+  noteId: string;
   payload?: CreateNoteInput | UpdateNoteInput;
   timestamp: number;
   retryCount: number;
