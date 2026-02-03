@@ -23,13 +23,11 @@ export function NotePreview({
   onPermanentDelete,
 }: NotePreviewProps) {
   return (
-    <li className="group relative">
+    <li className={`group relative rounded-lg ${isSelected ? "bg-gray-100" : "hover:bg-gray-100"}`}>
       <button
         type="button"
         onClick={onSelect}
-        className={`w-full text-left px-3 py-2 pr-10 rounded-lg hover:bg-gray-100 ${
-          isSelected ? "bg-gray-100" : ""
-        }`}
+        className="w-full text-left px-3 py-2 pr-10"
       >
         <p
           className={`font-medium truncate leading-6 grid grid-cols-[16px_1fr] items-center gap-1 ${note.title ? "text-gray-900" : "text-gray-400"}`}
