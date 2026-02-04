@@ -190,7 +190,7 @@ export function CloudSettings() {
   function handleDisconnect() {
     setD1Config(null);
     setCloudEnabled(false);
-    setConnectionStatus(null);
+    setConnectionStatus("untested");
     setTestPassed(false);
     setAccountId("");
     setDatabaseId("");
