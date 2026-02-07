@@ -154,6 +154,38 @@ export class SQLiteProvider implements StorageProvider {
     );
     return result[0]?.count ?? 0;
   }
+
+  // Settings operations
+
+  async getAllSettings(): Promise<Record<string, string>> {
+    const database = await this.getDb();
+    const rows = await database.select<{ key: string; value: string }[]>(
+      "SELECT key, value FROM settings"
+    );
+    const result: Record<string, string> = {};
+    for (const row of rows) {
+      result[row.key] = row.value;
+    }
+    return result;
+  }
+
+  async getSetting(key: string): Promise<string | null> {
+    const database = await this.getDb();
+    const rows = await database.select<{ value: string }[]>(
+      "SELECT value FROM settings WHERE key = $1",
+      [key]
+    );
+    return rows[0]?.value ?? null;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    const database = await this.getDb();
+    await database.execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      [key, value]
+    );
+  }
 }
 
 // Singleton instance

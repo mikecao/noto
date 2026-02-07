@@ -221,7 +221,7 @@ export function CloudSettings() {
                 <span>Connected to Cloudflare D1</span>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm border border-gray-200 rounded-lg p-3">
                 <div>
                   <span className="text-gray-500">Account ID: </span>
                   <span className="text-gray-700">{d1Config?.accountId}</span>
@@ -266,13 +266,13 @@ export function CloudSettings() {
               <div className="flex flex-col gap-2 pt-2">
                 <button
                   onClick={() => setShowResetDialog(true)}
-                  className="px-3 py-1.5 text-xs text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-sm text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   Reset cloud database
                 </button>
                 <button
                   onClick={() => setShowDisconnectDialog(true)}
-                  className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Disconnect
                 </button>

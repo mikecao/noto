@@ -65,6 +65,15 @@ pub fn run() {
         ALTER TABLE notes_new RENAME TO notes;
       ",
       kind: MigrationKind::Up,
+    },
+    Migration {
+      version: 7,
+      description: "create settings table",
+      sql: "CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL
+      )",
+      kind: MigrationKind::Up,
     }
   ];
 

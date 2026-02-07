@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { D1Config } from "../lib/storage/types";
+import { getSQLiteProvider } from "../lib/storage/sqlite";
 
 export type SortBy = "updated" | "created" | "title";
 
@@ -9,12 +9,14 @@ interface SettingsStore {
   showPreview: boolean;
   showDate: boolean;
   settingsOpen: boolean;
+  _hydrated: boolean;
 
   // Cloud settings
   cloudEnabled: boolean;
   d1Config: D1Config | null;
   connectionStatus: "untested" | "testing" | "success" | "failed";
 
+  initSettings: () => Promise<void>;
   setSortBy: (sortBy: SortBy) => void;
   setShowPreview: (show: boolean) => void;
   setShowDate: (show: boolean) => void;
@@ -26,39 +28,94 @@ interface SettingsStore {
   setConnectionStatus: (status: "untested" | "testing" | "success" | "failed") => void;
 }
 
-export const useSettingsStore = create<SettingsStore>()(
-  persist(
-    (set) => ({
-      sortBy: "updated",
-      showPreview: true,
-      showDate: false,
-      settingsOpen: false,
+function saveSetting(key: string, value: unknown) {
+  getSQLiteProvider().setSetting(key, JSON.stringify(value));
+}
 
-      // Cloud settings defaults
-      cloudEnabled: false,
-      d1Config: null,
-      connectionStatus: "untested",
+export const useSettingsStore = create<SettingsStore>()((set) => ({
+  sortBy: "updated",
+  showPreview: true,
+  showDate: false,
+  settingsOpen: false,
+  _hydrated: false,
 
-      setSortBy: (sortBy) => set({ sortBy }),
-      setShowPreview: (showPreview) => set({ showPreview }),
-      setShowDate: (showDate) => set({ showDate }),
-      setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  // Cloud settings defaults
+  cloudEnabled: false,
+  d1Config: null,
+  connectionStatus: "untested",
 
-      // Cloud settings actions
-      setCloudEnabled: (cloudEnabled) => set({ cloudEnabled }),
-      setD1Config: (d1Config) => set({ d1Config, connectionStatus: "untested" }),
-      setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
-    }),
-    {
-      name: "noto-settings",
-      partialize: (state) => ({
-        sortBy: state.sortBy,
-        showPreview: state.showPreview,
-        showDate: state.showDate,
-        // Persist cloud settings
-        cloudEnabled: state.cloudEnabled,
-        d1Config: state.d1Config,
-      }),
+  initSettings: async () => {
+    const db = getSQLiteProvider();
+    let settings = await db.getAllSettings();
+
+    // Migrate from localStorage if SQLite is empty
+    if (Object.keys(settings).length === 0) {
+      const raw = localStorage.getItem("noto-settings");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          const state = parsed.state ?? parsed;
+          const migrations: Record<string, unknown> = {};
+          if (state.sortBy !== undefined) migrations.sortBy = state.sortBy;
+          if (state.showPreview !== undefined) migrations.showPreview = state.showPreview;
+          if (state.showDate !== undefined) migrations.showDate = state.showDate;
+          if (state.cloudEnabled !== undefined) migrations.cloudEnabled = state.cloudEnabled;
+          if (state.d1Config !== undefined) migrations.d1Config = state.d1Config;
+
+          for (const [key, value] of Object.entries(migrations)) {
+            await db.setSetting(key, JSON.stringify(value));
+          }
+          settings = await db.getAllSettings();
+          localStorage.removeItem("noto-settings");
+        } catch {
+          // Ignore corrupt localStorage data
+        }
+      }
     }
-  )
-);
+
+    const parse = <T>(key: string, fallback: T): T => {
+      if (key in settings) {
+        try {
+          return JSON.parse(settings[key]) as T;
+        } catch {
+          return fallback;
+        }
+      }
+      return fallback;
+    };
+
+    set({
+      sortBy: parse<SortBy>("sortBy", "updated"),
+      showPreview: parse<boolean>("showPreview", true),
+      showDate: parse<boolean>("showDate", false),
+      cloudEnabled: parse<boolean>("cloudEnabled", false),
+      d1Config: parse<D1Config | null>("d1Config", null),
+      _hydrated: true,
+    });
+  },
+
+  setSortBy: (sortBy) => {
+    set({ sortBy });
+    saveSetting("sortBy", sortBy);
+  },
+  setShowPreview: (showPreview) => {
+    set({ showPreview });
+    saveSetting("showPreview", showPreview);
+  },
+  setShowDate: (showDate) => {
+    set({ showDate });
+    saveSetting("showDate", showDate);
+  },
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+
+  // Cloud settings actions
+  setCloudEnabled: (cloudEnabled) => {
+    set({ cloudEnabled });
+    saveSetting("cloudEnabled", cloudEnabled);
+  },
+  setD1Config: (d1Config) => {
+    set({ d1Config, connectionStatus: "untested" });
+    saveSetting("d1Config", d1Config);
+  },
+  setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
+}));

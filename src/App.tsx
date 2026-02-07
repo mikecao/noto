@@ -11,10 +11,12 @@ function App() {
   const loadNotes = useNoteStore((state) => state.loadNotes);
   const settingsOpen = useSettingsStore((state) => state.settingsOpen);
   const setSettingsOpen = useSettingsStore((state) => state.setSettingsOpen);
+  const initSettings = useSettingsStore((state) => state.initSettings);
+  const settingsHydrated = useSettingsStore((state) => state._hydrated);
 
   useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+    initSettings().then(() => loadNotes());
+  }, [initSettings, loadNotes]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -26,7 +28,7 @@ function App() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [settingsOpen, setSettingsOpen]);
 
-  if (loading) {
+  if (loading || !settingsHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500">Loading...</p>
@@ -37,7 +39,7 @@ function App() {
   if (settingsOpen) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
-        <div className="w-full max-w-md p-6">
+        <div className="w-full max-w-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2 text-gray-900">
               <Settings size={20} />
