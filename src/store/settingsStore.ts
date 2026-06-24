@@ -84,12 +84,17 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
       return fallback;
     };
 
-    set({
+    const hydrated = {
       sortBy: parse<SortBy>("sortBy", "updated"),
       showPreview: parse<boolean>("showPreview", true),
       showDate: parse<boolean>("showDate", false),
       cloudEnabled: parse<boolean>("cloudEnabled", false),
       d1Config: parse<D1Config | null>("d1Config", null),
+    };
+
+    set({
+      ...hydrated,
+      connectionStatus: hydrated.cloudEnabled && hydrated.d1Config ? "success" : "untested",
       _hydrated: true,
     });
   },
