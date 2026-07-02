@@ -1,6 +1,6 @@
 {
   "name": "noto",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A simple notes app",
   "homepage": "https://github.com/mikecao/noto#readme",
   "bugs": {
@@ -21,6 +21,7 @@
     "preview": "vite preview",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "tauri:build:win:signed": "tauri build --config src-tauri/tauri.windows.signing.conf.json",
     "lint": "biome check .",
     "format": "biome format --write ."
   },

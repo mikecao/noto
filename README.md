@@ -49,8 +49,35 @@ pnpm tauri dev
 | `pnpm preview` | Preview production build |
 | `pnpm tauri dev` | Run Tauri app in development |
 | `pnpm tauri build` | Build Tauri app for distribution |
+| `pnpm tauri:build:win:signed` | Build Windows bundles using SSL.com signing |
 | `pnpm lint` | Run Biome linter |
 | `pnpm format` | Format code with Biome |
+
+## Release Code Signing
+
+GitHub releases sign macOS builds when these secrets are present:
+
+- `APPLE_CERTIFICATE` - Base64-encoded `.p12` Developer ID Application certificate
+- `APPLE_CERTIFICATE_PASSWORD` - Password for the exported `.p12`
+- `KEYCHAIN_PASSWORD` - Temporary CI keychain password
+- `APPLE_ID` - Apple ID email
+- `APPLE_APP_SPECIFIC_PASSWORD` or `APPLE_PASSWORD` - App-specific password for notarization
+- `APPLE_TEAM_ID` - Apple developer team ID
+- `APPLE_SIGNING_IDENTITY` - Optional explicit signing identity
+
+Windows releases sign with SSL.com CodeSignTool when these secrets are present:
+
+- `SSL_COM_USERNAME`
+- `SSL_COM_PASSWORD`
+- `SSL_COM_CREDENTIAL_ID`
+- `SSL_COM_TOTP_SECRET`
+- `SSL_COM_ENVIRONMENT_NAME` - Optional, set to `TEST` for SSL.com's sandbox
+
+For local Windows signing, set `SSL_COM_CODESIGNTOOL` to `CodeSignTool.bat` or `CodeSignTool.exe`, provide the SSL.com credentials above in the environment or `.env.local`, and run:
+
+```bash
+pnpm tauri:build:win:signed
+```
 
 ## Data Storage
 

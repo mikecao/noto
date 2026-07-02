@@ -23,6 +23,10 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
+    env:
+      MACOS_SIGNING_AVAILABLE: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.KEYCHAIN_PASSWORD != '' && secrets.APPLE_ID != '' && secrets.APPLE_TEAM_ID != '' && (secrets.APPLE_PASSWORD != '' || secrets.APPLE_APP_SPECIFIC_PASSWORD != '') }}
+      WINDOWS_SIGNING_AVAILABLE: ${{ secrets.SSL_COM_USERNAME != '' && secrets.SSL_COM_PASSWORD != '' && secrets.SSL_COM_CREDENTIAL_ID != '' && secrets.SSL_COM_TOTP_SECRET != '' }}
+      SSL_COM_ENVIRONMENT_NAME: ${{ secrets.SSL_COM_ENVIRONMENT_NAME || 'PROD' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,13 +67,102 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build frontend
-        run: pnpm build
+      - name: Import Apple Developer certificate
+        if: matrix.platform == 'macos-latest' && env.MACOS_SIGNING_AVAILABLE == 'true'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY_SECRET: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          certificate_path="$RUNNER_TEMP/apple-certificate.p12"
+          keychain_path="$RUNNER_TEMP/build.keychain-db"
+
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$certificate_path"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security import "$certificate_path" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path" -T /usr/bin/codesign -T /usr/bin/security
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -s "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security find-identity -v -p codesigning "$keychain_path"
+
+          if [[ -n "${APPLE_SIGNING_IDENTITY_SECRET:-}" ]]; then
+            signing_identity="$APPLE_SIGNING_IDENTITY_SECRET"
+          else
+            signing_identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F'"' '/Developer ID Application/ { print $2; exit }')"
+            if [[ -z "$signing_identity" ]]; then
+              signing_identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F'"' '/Apple Distribution/ { print $2; exit }')"
+            fi
+            if [[ -z "$signing_identity" ]]; then
+              signing_identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F'"' '/"[^"]+"/ { print $2; exit }')"
+            fi
+          fi
+
+          if [[ -z "$signing_identity" ]]; then
+            echo "Could not find an Apple code signing identity in the imported certificate." >&2
+            exit 1
+          fi
+
+          echo "APPLE_SIGNING_IDENTITY=$signing_identity" >> "$GITHUB_ENV"
+
+      - name: Install SSL.com CodeSignTool
+        if: matrix.platform == 'windows-latest' && env.WINDOWS_SIGNING_AVAILABLE == 'true'
+        shell: pwsh
+        run: |
+          $toolVersion = "v1.3.2"
+          $toolRoot = Join-Path $env:RUNNER_TEMP "CodeSignTool-$toolVersion"
+          $downloadPath = Join-Path $env:RUNNER_TEMP "CodeSignTool-$toolVersion-windows.zip"
+          $downloadUrl = "https://github.com/SSLcom/CodeSignTool/releases/download/$toolVersion/CodeSignTool-$toolVersion-windows.zip"
+
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadPath
+
+          if (Test-Path -LiteralPath $toolRoot) {
+            Remove-Item -LiteralPath $toolRoot -Recurse -Force
+          }
+
+          Expand-Archive -LiteralPath $downloadPath -DestinationPath $toolRoot -Force
+
+          $codeSignTool = Join-Path $toolRoot "CodeSignTool.bat"
+          if (-not (Test-Path -LiteralPath $codeSignTool)) {
+            throw "Could not find CodeSignTool.bat after expanding $downloadPath"
+          }
+
+          $configPath = Join-Path $toolRoot "conf\code_sign_tool.properties"
+          if ($env:SSL_COM_ENVIRONMENT_NAME -eq "TEST") {
+            @(
+              "CLIENT_ID=qOUeZCCzSqgA93acB3LYq6lBNjgZdiOxQc-KayC3UMw"
+              "OAUTH2_ENDPOINT=https://oauth-sandbox.ssl.com/oauth2/token"
+              "CSC_API_ENDPOINT=https://cs-try.ssl.com"
+              "TSA_URL=http://ts.ssl.com"
+              "TSA_LEGACY_URL=http://ts.ssl.com/legacy"
+            ) | Set-Content -LiteralPath $configPath -Encoding ASCII
+          } else {
+            @(
+              "CLIENT_ID=kaXTRACNijSWsFdRKg_KAfD3fqrBlzMbWs6TwWHwAn8"
+              "OAUTH2_ENDPOINT=https://login.ssl.com/oauth2/token"
+              "CSC_API_ENDPOINT=https://cs.ssl.com"
+              "TSA_URL=http://ts.ssl.com"
+              "TSA_LEGACY_URL=http://ts.ssl.com/legacy"
+            ) | Set-Content -LiteralPath $configPath -Encoding ASCII
+          }
+
+          $signingLogDir = Join-Path $env:RUNNER_TEMP "noto-windows-signing"
+          "SSL_COM_CODESIGNTOOL=$codeSignTool" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "TAURI_SIGNING_LOG_DIR=$signingLogDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build Tauri app
+        if: matrix.platform != 'windows-latest' || env.WINDOWS_SIGNING_AVAILABLE != 'true'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD || secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Noto v__VERSION__'
@@ -77,3 +170,28 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Build signed Windows Tauri app
+        if: matrix.platform == 'windows-latest' && env.WINDOWS_SIGNING_AVAILABLE == 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SSL_COM_USERNAME: ${{ secrets.SSL_COM_USERNAME }}
+          SSL_COM_PASSWORD: ${{ secrets.SSL_COM_PASSWORD }}
+          SSL_COM_CREDENTIAL_ID: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
+          SSL_COM_TOTP_SECRET: ${{ secrets.SSL_COM_TOTP_SECRET }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Noto v__VERSION__'
+          releaseBody: 'See the assets to download and install this version.'
+          releaseDraft: true
+          prerelease: false
+          args: --config src-tauri/tauri.windows.signing.conf.json
+
+      - name: Upload Windows signing logs
+        if: always() && matrix.platform == 'windows-latest' && env.WINDOWS_SIGNING_AVAILABLE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: noto-windows-signing-logs
+          if-no-files-found: ignore
+          path: ${{ runner.temp }}/noto-windows-signing/**
