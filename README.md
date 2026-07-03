@@ -57,13 +57,13 @@ pnpm tauri dev
 
 GitHub releases sign macOS builds when these secrets are present:
 
-- `APPLE_CERTIFICATE` or `MAC_CSC_LINK` - Base64-encoded `.p12` Developer ID Application certificate
-- `APPLE_CERTIFICATE_PASSWORD` or `MAC_CSC_KEY_PASSWORD` - Password for the exported `.p12`
+- `APPLE_CERTIFICATE`, `MAC_CSC_LINK`, or `CSC_LINK` - Base64-encoded `.p12` Developer ID Application certificate
+- `APPLE_CERTIFICATE_PASSWORD`, `MAC_CSC_KEY_PASSWORD`, or `CSC_KEY_PASSWORD` - Password for the exported `.p12`
 - `KEYCHAIN_PASSWORD` - Optional temporary CI keychain password
 - `APPLE_ID` - Apple ID email
 - `APPLE_APP_SPECIFIC_PASSWORD` or `APPLE_PASSWORD` - App-specific password for notarization
 - `APPLE_TEAM_ID` - Apple developer team ID
-- `APPLE_SIGNING_IDENTITY` - Optional explicit signing identity
+- `APPLE_SIGNING_IDENTITY` or `CSC_NAME` - Optional explicit signing identity
 
 Windows releases sign with SSL.com CodeSignTool when these secrets are present:
 

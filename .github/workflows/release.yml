@@ -24,7 +24,7 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     env:
-      MACOS_SIGNING_AVAILABLE: ${{ (secrets.APPLE_CERTIFICATE != '' || secrets.MAC_CSC_LINK != '') && (secrets.APPLE_CERTIFICATE_PASSWORD != '' || secrets.MAC_CSC_KEY_PASSWORD != '') && secrets.APPLE_ID != '' && secrets.APPLE_TEAM_ID != '' && (secrets.APPLE_PASSWORD != '' || secrets.APPLE_APP_SPECIFIC_PASSWORD != '') }}
+      MACOS_SIGNING_AVAILABLE: ${{ (secrets.APPLE_CERTIFICATE != '' || secrets.MAC_CSC_LINK != '' || secrets.CSC_LINK != '') && (secrets.APPLE_CERTIFICATE_PASSWORD != '' || secrets.MAC_CSC_KEY_PASSWORD != '' || secrets.CSC_KEY_PASSWORD != '') && secrets.APPLE_ID != '' && secrets.APPLE_TEAM_ID != '' && (secrets.APPLE_PASSWORD != '' || secrets.APPLE_APP_SPECIFIC_PASSWORD != '') }}
       WINDOWS_SIGNING_AVAILABLE: ${{ secrets.SSL_COM_USERNAME != '' && secrets.SSL_COM_PASSWORD != '' && secrets.SSL_COM_CREDENTIAL_ID != '' && secrets.SSL_COM_TOTP_SECRET != '' }}
       SSL_COM_ENVIRONMENT_NAME: ${{ secrets.SSL_COM_ENVIRONMENT_NAME || 'PROD' }}
     steps:
@@ -71,9 +71,9 @@ jobs:
         if: matrix.platform == 'macos-latest' && env.MACOS_SIGNING_AVAILABLE == 'true'
         shell: bash
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE || secrets.MAC_CSC_LINK }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD || secrets.MAC_CSC_KEY_PASSWORD }}
-          APPLE_SIGNING_IDENTITY_SECRET: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE || secrets.MAC_CSC_LINK || secrets.CSC_LINK }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD || secrets.MAC_CSC_KEY_PASSWORD || secrets.CSC_KEY_PASSWORD }}
+          APPLE_SIGNING_IDENTITY_SECRET: ${{ secrets.APPLE_SIGNING_IDENTITY || secrets.CSC_NAME }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           set -euo pipefail

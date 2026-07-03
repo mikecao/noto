@@ -8,9 +8,8 @@
           "-NoProfile",
           "-ExecutionPolicy",
           "Bypass",
-          "-File",
-          "scripts/sign-windows.ps1",
-          "%1"
+          "-Command",
+          "$ErrorActionPreference = 'Stop'; $candidates = @('scripts/sign-windows.ps1', '../scripts/sign-windows.ps1'); $script = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1; if (-not $script) { throw \"Could not find scripts/sign-windows.ps1 from $PWD\" }; & (Resolve-Path -LiteralPath $script).Path \"%1\""
         ]
       }
     }
