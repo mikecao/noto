@@ -153,8 +153,10 @@ jobs:
           }
 
           $signingLogDir = Join-Path $env:RUNNER_TEMP "noto-windows-signing"
+          $signingScript = Join-Path $env:GITHUB_WORKSPACE "scripts\sign-windows.ps1"
           "SSL_COM_CODESIGNTOOL=$codeSignTool" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "TAURI_SIGNING_LOG_DIR=$signingLogDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SIGN_WINDOWS_SCRIPT=$signingScript" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build Tauri app
         if: matrix.platform != 'windows-latest' || env.WINDOWS_SIGNING_AVAILABLE != 'true'

@@ -3,13 +3,13 @@
   "bundle": {
     "windows": {
       "signCommand": {
-        "cmd": "pwsh",
+        "cmd": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
         "args": [
           "-NoProfile",
           "-ExecutionPolicy",
           "Bypass",
           "-Command",
-          "$ErrorActionPreference = 'Stop'; $candidates = @(); if ($env:GITHUB_WORKSPACE) { $candidates += Join-Path $env:GITHUB_WORKSPACE 'scripts/sign-windows.ps1' }; $candidates += @('scripts/sign-windows.ps1', '../scripts/sign-windows.ps1', '../../../scripts/sign-windows.ps1'); $script = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1; if (-not $script) { throw \"Could not find scripts/sign-windows.ps1 from $PWD\" }; & (Resolve-Path -LiteralPath $script).Path \"%1\""
+          "$ErrorActionPreference = 'Stop'; $candidates = @(); if ($env:SIGN_WINDOWS_SCRIPT) { $candidates += $env:SIGN_WINDOWS_SCRIPT }; if ($env:GITHUB_WORKSPACE) { $candidates += Join-Path $env:GITHUB_WORKSPACE 'scripts/sign-windows.ps1' }; $candidates += @('scripts/sign-windows.ps1', '../scripts/sign-windows.ps1', '../../../scripts/sign-windows.ps1'); $script = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1; if (-not $script) { throw \"Could not find scripts/sign-windows.ps1 from $PWD\" }; & (Resolve-Path -LiteralPath $script).Path \"%1\""
         ]
       }
     }
