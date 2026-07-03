@@ -1,9 +1,9 @@
-$ErrorActionPreference = "Stop"
-
 param(
   [Parameter(Mandatory = $true, Position = 0)]
   [string]$InputPath
 )
+
+$ErrorActionPreference = "Stop"
 
 function Import-EnvFile {
   param(
