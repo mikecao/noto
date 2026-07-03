@@ -113,7 +113,11 @@ function Resolve-SignTool {
     Sort-Object FullName -Descending |
     Select-Object -First 1
 
-  return $candidate?.FullName
+  if ($candidate) {
+    return $candidate.FullName
+  }
+
+  return $null
 }
 
 function Assert-CodeSignature {
