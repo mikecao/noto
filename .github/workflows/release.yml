@@ -154,9 +154,28 @@ jobs:
 
           $signingLogDir = Join-Path $env:RUNNER_TEMP "noto-windows-signing"
           $signingScript = Join-Path $env:GITHUB_WORKSPACE "scripts\sign-windows.ps1"
+          $signingConfigPath = Join-Path $env:GITHUB_WORKSPACE "src-tauri\tauri.windows.signing.ci.conf.json"
+          @{
+            '$schema' = '../node_modules/@tauri-apps/cli/config.schema.json'
+            bundle = @{
+              windows = @{
+                signCommand = @{
+                  cmd = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+                  args = @(
+                    '-NoProfile'
+                    '-ExecutionPolicy'
+                    'Bypass'
+                    '-File'
+                    $signingScript
+                    '%1'
+                  )
+                }
+              }
+            }
+          } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $signingConfigPath -Encoding UTF8
+
           "SSL_COM_CODESIGNTOOL=$codeSignTool" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "TAURI_SIGNING_LOG_DIR=$signingLogDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "SIGN_WINDOWS_SCRIPT=$signingScript" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build Tauri app
         if: matrix.platform != 'windows-latest' || env.WINDOWS_SIGNING_AVAILABLE != 'true'
@@ -189,7 +208,7 @@ jobs:
           releaseBody: 'See the assets to download and install this version.'
           releaseDraft: true
           prerelease: false
-          args: --config src-tauri/tauri.windows.signing.conf.json
+          args: --config src-tauri/tauri.windows.signing.ci.conf.json
 
       - name: Upload Windows signing logs
         if: always() && matrix.platform == 'windows-latest' && env.WINDOWS_SIGNING_AVAILABLE == 'true'
