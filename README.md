@@ -57,9 +57,9 @@ pnpm tauri dev
 
 GitHub releases sign macOS builds when these secrets are present:
 
-- `APPLE_CERTIFICATE` - Base64-encoded `.p12` Developer ID Application certificate
-- `APPLE_CERTIFICATE_PASSWORD` - Password for the exported `.p12`
-- `KEYCHAIN_PASSWORD` - Temporary CI keychain password
+- `APPLE_CERTIFICATE` or `MAC_CSC_LINK` - Base64-encoded `.p12` Developer ID Application certificate
+- `APPLE_CERTIFICATE_PASSWORD` or `MAC_CSC_KEY_PASSWORD` - Password for the exported `.p12`
+- `KEYCHAIN_PASSWORD` - Optional temporary CI keychain password
 - `APPLE_ID` - Apple ID email
 - `APPLE_APP_SPECIFIC_PASSWORD` or `APPLE_PASSWORD` - App-specific password for notarization
 - `APPLE_TEAM_ID` - Apple developer team ID
